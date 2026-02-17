@@ -1,34 +1,59 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
-import logo from '../assets/images/logo.png'; // Import your logo
+import logo from '../assets/images/logo.png';
 
 const Login = () => {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const { login, loading } = useAuth();
   const { isDark, toggleTheme } = useTheme();
+  const navigate = useNavigate(); // Initialize navigate
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     
-    const result = await login(email, password);
-    if (!result.success) {
+    const result = await login(username, password);
+    if (result.success) {
+      // Navigate based on user role
+      const userRole = result.user?.role || 'callcenter'; // Get role from result
+      
+      switch(userRole) {
+        case 'systemadmin':
+          navigate('/systemadmin');
+          break;
+        case 'admin':
+          navigate('/admin');
+          break;
+        case 'callcenter':
+        default:
+          navigate('/callcenter');
+          break;
+      }
+    } else {
       setError(result.error);
     }
   };
 
-  // Get current year dynamically
   const currentYear = new Date().getFullYear();
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4 transition-colors duration-300">
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md p-8 relative border border-gray-200 dark:border-gray-700">
-     
+        
+        {/* Theme Toggle Button */}
+        <button 
+          onClick={toggleTheme}
+          className="absolute top-4 right-4 p-2 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-300"
+          aria-label="Toggle theme"
+        >
+          <span className="text-xl">{isDark ? '☀️' : '🌙'}</span>
+        </button>
 
-        {/* Logo Section - Centered with image */}
+        {/* Logo Section */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
             <img 
@@ -37,7 +62,10 @@ const Login = () => {
               className="w-20 h-20 object-contain"
             />
           </div>
-          
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">FeedbackFlow</h1>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
+            Customer Service Feedback Management
+          </p>
         </div>
 
         {/* Login Form */}
@@ -49,17 +77,17 @@ const Login = () => {
             </div>
           )}
           
-          {/* Email Field */}
+          {/* Username Field */}
           <div className="space-y-2">
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Email Address
+            <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Username
             </label>
             <input
-              type="email"
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
+              type="text"
+              id="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Enter your username"
               required
               className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 
                        bg-white dark:bg-gray-700 text-gray-900 dark:text-white
@@ -112,10 +140,10 @@ const Login = () => {
           </button>
         </form>
 
-        {/* Footer with Dynamic Year */}
+        {/* Footer */}
         <div className="mt-8 text-center">
           <p className="text-xs text-gray-400 dark:text-gray-500">
-            © {currentYear} FeedbackFlow. All rights reserved.
+            © {currentYear} All rights reserved.
           </p>
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
             Secure Enterprise Solution

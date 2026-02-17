@@ -1,7 +1,16 @@
 import React, { useState } from 'react';
+import { 
+  FiBarChart2, 
+  FiCalendar, 
+  FiTrendingUp, 
+  FiTrendingDown,
+  FiCheckCircle,
+  FiClock,
+  FiStar,
+  FiDownload,
+  FiRefreshCw
+} from 'react-icons/fi';
 import { mockDailyReports, mockWeeklyReports, mockMonthlyReports, mockYearlyReports } from '../../data/mockData';
-import Button from '../common/Button';
-import './DailyReports.css';
 
 const DailyReports = () => {
   const [reportType, setReportType] = useState('daily');
@@ -9,256 +18,229 @@ const DailyReports = () => {
 
   const getReports = () => {
     switch(reportType) {
-      case 'daily':
-        return mockDailyReports;
-      case 'weekly':
-        return mockWeeklyReports;
-      case 'monthly':
-        return mockMonthlyReports;
-      case 'yearly':
-        return mockYearlyReports;
-      default:
-        return [];
+      case 'daily': return mockDailyReports;
+      case 'weekly': return mockWeeklyReports;
+      case 'monthly': return mockMonthlyReports;
+      case 'yearly': return mockYearlyReports;
+      default: return [];
     }
   };
 
   const reports = getReports();
 
-  const renderDailyReport = (report, index) => (
-    <div key={index} className="report-card">
-      <div className="report-header">
-        <h3>{new Date(report.date).toLocaleDateString('en-US', { 
-          weekday: 'long', 
-          year: 'numeric', 
-          month: 'long', 
-          day: 'numeric' 
-        })}</h3>
-        <span className={`status-badge ${report.satisfactionRate >= 90 ? 'excellent' : report.satisfactionRate >= 80 ? 'good' : 'average'}`}>
-          {report.satisfactionRate}% Satisfaction
-        </span>
-      </div>
+  const getSatisfactionColor = (rate) => {
+    if (rate >= 90) return 'text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30';
+    if (rate >= 80) return 'text-yellow-600 dark:text-yellow-400 bg-yellow-100 dark:bg-yellow-900/30';
+    return 'text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30';
+  };
 
-      <div className="stats-grid">
-        <div className="stat-item">
-          <span className="stat-value">{report.totalCalls}</span>
-          <span className="stat-label">Total Calls</span>
-        </div>
-        <div className="stat-item">
-          <span className="stat-value">{report.resolved}</span>
-          <span className="stat-label">Resolved</span>
-        </div>
-        <div className="stat-item">
-          <span className="stat-value">{report.pending}</span>
-          <span className="stat-label">Pending</span>
-        </div>
-        <div className="stat-item">
-          <span className="stat-value">{report.averageRating}</span>
-          <span className="stat-label">Avg Rating</span>
-        </div>
-      </div>
-
-      <div className="categories-section">
-        <h4>Top Categories</h4>
-        <div className="category-bars">
-          {report.topCategories.map((cat, idx) => (
-            <div key={idx} className="category-item">
-              <span className="category-name">{cat.name}</span>
-              <div className="progress-bar">
-                <div 
-                  className="progress-fill"
-                  style={{ 
-                    width: `${(cat.count / report.totalCalls) * 100}%`,
-                    background: 'var(--primary)'
-                  }}
-                />
-              </div>
-              <span className="category-count">{cat.count}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderWeeklyReport = (report, index) => (
-    <div key={index} className="report-card">
-      <div className="report-header">
-        <h3>{report.week}</h3>
-        <span className={`trend-badge ${report.trend.startsWith('+') ? 'positive' : 'negative'}`}>
-          {report.trend}
-        </span>
-      </div>
-      <p className="date-range">{report.startDate} - {report.endDate}</p>
-      
-      <div className="stats-grid">
-        <div className="stat-item">
-          <span className="stat-value">{report.totalCalls}</span>
-          <span className="stat-label">Total Calls</span>
-        </div>
-        <div className="stat-item">
-          <span className="stat-value">{report.resolved}</span>
-          <span className="stat-label">Resolved</span>
-        </div>
-        <div className="stat-item">
-          <span className="stat-value">{report.averageRating}</span>
-          <span className="stat-label">Avg Rating</span>
-        </div>
-        <div className="stat-item">
-          <span className="stat-value">{report.satisfactionRate}%</span>
-          <span className="stat-label">Satisfaction</span>
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderMonthlyReport = (report, index) => (
-    <div key={index} className="report-card">
-      <div className="report-header">
-        <h3>{report.month}</h3>
-        <span className={`trend-badge ${report.trend.startsWith('+') ? 'positive' : 'negative'}`}>
-          {report.trend}
-        </span>
-      </div>
-      
-      <div className="stats-grid">
-        <div className="stat-item">
-          <span className="stat-value">{report.totalCalls}</span>
-          <span className="stat-label">Total Calls</span>
-        </div>
-        <div className="stat-item">
-          <span className="stat-value">{report.resolved}</span>
-          <span className="stat-label">Resolved</span>
-        </div>
-        <div className="stat-item">
-          <span className="stat-value">{report.averageRating}</span>
-          <span className="stat-label">Avg Rating</span>
-        </div>
-        <div className="stat-item">
-          <span className="stat-value">{report.satisfactionRate}%</span>
-          <span className="stat-label">Satisfaction</span>
-        </div>
-      </div>
-
-      <div className="top-performers">
-        <h4>Top Performers</h4>
-        <div className="performer-list">
-          {report.topPerformers.map((performer, idx) => (
-            <span key={idx} className="performer-tag">{performer}</span>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderYearlyReport = (report, index) => (
-    <div key={index} className="report-card">
-      <div className="report-header">
-        <h3>{report.year} Annual Report</h3>
-        <span className={`trend-badge ${report.growth.startsWith('+') ? 'positive' : 'negative'}`}>
-          {report.growth} Growth
-        </span>
-      </div>
-      
-      <div className="stats-grid">
-        <div className="stat-item">
-          <span className="stat-value">{report.totalCalls.toLocaleString()}</span>
-          <span className="stat-label">Total Calls</span>
-        </div>
-        <div className="stat-item">
-          <span className="stat-value">{report.resolved.toLocaleString()}</span>
-          <span className="stat-label">Resolved</span>
-        </div>
-        <div className="stat-item">
-          <span className="stat-value">{report.averageRating}</span>
-          <span className="stat-label">Avg Rating</span>
-        </div>
-        <div className="stat-item">
-          <span className="stat-value">{report.satisfactionRate}%</span>
-          <span className="stat-label">Satisfaction</span>
-        </div>
-      </div>
-
-      <div className="quarterly-breakdown">
-        <h4>Quarterly Breakdown</h4>
-        <div className="quarter-grid">
-          {report.quarterlyBreakdown.map((quarter, idx) => (
-            <div key={idx} className="quarter-item">
-              <span className="quarter-name">{quarter.quarter}</span>
-              <span className="quarter-calls">{quarter.calls} calls</span>
-              <span className="quarter-rating">Rating: {quarter.rating}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
+  const getTrendIcon = (trend) => {
+    if (trend?.startsWith('+')) return <FiTrendingUp className="text-green-600" />;
+    return <FiTrendingDown className="text-red-600" />;
+  };
 
   return (
-    <div className="reports-container">
-      <div className="reports-header">
-        <h2>Performance Reports</h2>
-        <div className="report-type-selector">
-          <Button 
-            variant={reportType === 'daily' ? 'primary' : 'secondary'}
-            onClick={() => setReportType('daily')}
-            size="small"
-          >
-            Daily
-          </Button>
-          <Button 
-            variant={reportType === 'weekly' ? 'primary' : 'secondary'}
-            onClick={() => setReportType('weekly')}
-            size="small"
-          >
-            Weekly
-          </Button>
-          <Button 
-            variant={reportType === 'monthly' ? 'primary' : 'secondary'}
-            onClick={() => setReportType('monthly')}
-            size="small"
-          >
-            Monthly
-          </Button>
-          <Button 
-            variant={reportType === 'yearly' ? 'primary' : 'secondary'}
-            onClick={() => setReportType('yearly')}
-            size="small"
-          >
-            Yearly
-          </Button>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <FiBarChart2 className="text-purple-600" />
+            Performance Reports
+          </h2>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
+            Track your call center performance metrics
+          </p>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <button className="p-2 text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-colors">
+            <FiDownload className="w-5 h-5" />
+          </button>
+          <button className="p-2 text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-colors">
+            <FiRefreshCw className="w-5 h-5" />
+          </button>
         </div>
       </div>
 
+      {/* Report Type Selector */}
+      <div className="flex flex-wrap gap-2">
+        {['daily', 'weekly', 'monthly', 'yearly'].map(type => (
+          <button
+            key={type}
+            onClick={() => setReportType(type)}
+            className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
+              reportType === type 
+                ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/25' 
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+            }`}
+          >
+            {type.charAt(0).toUpperCase() + type.slice(1)}
+          </button>
+        ))}
+      </div>
+
+      {/* Date Picker for Daily Reports */}
       {reportType === 'daily' && (
-        <div className="date-selector">
+        <div className="flex items-center gap-2">
+          <FiCalendar className="text-gray-400" />
           <input
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="date-input"
+            className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
+                     bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                     focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
           />
         </div>
       )}
 
-      <div className="reports-list">
+      {/* Reports List */}
+      <div className="space-y-6">
         {reports.length > 0 ? (
-          reports.map((report, index) => {
-            switch(reportType) {
-              case 'daily':
-                return renderDailyReport(report, index);
-              case 'weekly':
-                return renderWeeklyReport(report, index);
-              case 'monthly':
-                return renderMonthlyReport(report, index);
-              case 'yearly':
-                return renderYearlyReport(report, index);
-              default:
-                return null;
-            }
-          })
+          reports.map((report, index) => (
+            <div 
+              key={index} 
+              className="bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-gray-200 dark:border-gray-700 p-6"
+            >
+              {/* Report Header */}
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    {report.date ? new Date(report.date).toLocaleDateString('en-US', { 
+                      weekday: 'long', 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    }) : report.week || report.month || report.year}
+                  </h3>
+                  {report.startDate && report.endDate && (
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                      {report.startDate} - {report.endDate}
+                    </p>
+                  )}
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  {report.trend && (
+                    <span className="flex items-center gap-1 text-sm font-medium">
+                      {getTrendIcon(report.trend)}
+                      {report.trend}
+                    </span>
+                  )}
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${getSatisfactionColor(report.satisfactionRate)}`}>
+                    {report.satisfactionRate}% Satisfaction
+                  </span>
+                </div>
+              </div>
+
+              {/* Stats Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 text-center">
+                  <FiPhone className="w-5 h-5 text-purple-600 mx-auto mb-2" />
+                  <span className="block text-2xl font-bold text-gray-900 dark:text-white">
+                    {report.totalCalls}
+                  </span>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">Total Calls</span>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 text-center">
+                  <FiCheckCircle className="w-5 h-5 text-green-600 mx-auto mb-2" />
+                  <span className="block text-2xl font-bold text-gray-900 dark:text-white">
+                    {report.resolved}
+                  </span>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">Resolved</span>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 text-center">
+                  <FiClock className="w-5 h-5 text-orange-600 mx-auto mb-2" />
+                  <span className="block text-2xl font-bold text-gray-900 dark:text-white">
+                    {report.pending || 0}
+                  </span>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">Pending</span>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 text-center">
+                  <FiStar className="w-5 h-5 text-yellow-600 mx-auto mb-2" />
+                  <span className="block text-2xl font-bold text-gray-900 dark:text-white">
+                    {report.averageRating}
+                  </span>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">Avg Rating</span>
+                </div>
+              </div>
+
+              {/* Categories Section for Daily Reports */}
+              {report.topCategories && (
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                    Top Categories
+                  </h4>
+                  <div className="space-y-3">
+                    {report.topCategories.map((cat, idx) => (
+                      <div key={idx} className="flex items-center gap-3">
+                        <span className="text-sm text-gray-600 dark:text-gray-400 w-32">
+                          {cat.name}
+                        </span>
+                        <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-purple-600 rounded-full transition-all duration-500"
+                            style={{ width: `${(cat.count / report.totalCalls) * 100}%` }}
+                          />
+                        </div>
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          {cat.count}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Top Performers for Monthly Reports */}
+              {report.topPerformers && (
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
+                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                    Top Performers
+                  </h4>
+                  <div className="flex flex-wrap gap-2">
+                    {report.topPerformers.map((performer, idx) => (
+                      <span 
+                        key={idx}
+                        className="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full text-sm"
+                      >
+                        {performer}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Quarterly Breakdown for Yearly Reports */}
+              {report.quarterlyBreakdown && (
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
+                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                    Quarterly Breakdown
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {report.quarterlyBreakdown.map((quarter, idx) => (
+                      <div key={idx} className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
+                        <span className="block text-sm font-semibold text-gray-900 dark:text-white">
+                          {quarter.quarter}
+                        </span>
+                        <span className="block text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          {quarter.calls} calls
+                        </span>
+                        <span className="block text-xs text-gray-500 dark:text-gray-400">
+                          Rating: {quarter.rating}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ))
         ) : (
-          <div className="no-data">
-            <p>No reports available for this period</p>
+          <div className="text-center py-12">
+            <FiBarChart2 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-500 dark:text-gray-400">No reports available for this period</p>
           </div>
         )}
       </div>

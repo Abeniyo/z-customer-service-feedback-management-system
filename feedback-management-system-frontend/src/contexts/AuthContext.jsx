@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext } from 'react';
-import { mockUsers } from '../data/mockData';
+import axios from 'axios';
 
 const AuthContext = createContext();
 
@@ -12,30 +12,60 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    const saved = localStorage.getItem('user');
+    return saved ? JSON.parse(saved) : null;
+  });
   const [loading, setLoading] = useState(false);
 
-  const login = async (email, password) => {
+  const login = async (username, password) => {
     setLoading(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const foundUser = mockUsers.find(u => u.email === email && u.password === password);
-    
-    if (foundUser) {
-      setUser(foundUser);
-      localStorage.setItem('user', JSON.stringify(foundUser));
+    try {
+      const response = await axios.post('http://127.0.0.1:8000/api/v1/accounts/login/', {
+        username,
+        password
+      });
+
+      console.log('Login response:', response.data); // Debug log
+
+      // Handle different response structures
+      const access = response.data.access || response.data.token;
+      const refresh = response.data.refresh;
+      
+      // Get user data from response (adjust based on your API response)
+      const userData = response.data.user || {
+        username: username,
+        role: response.data.role || 'callcenter', // Get role from response
+        email: response.data.email || '',
+      };
+
+      // Store tokens
+      if (access) localStorage.setItem('accessToken', access);
+      if (refresh) localStorage.setItem('refreshToken', refresh);
+
+      // Store user
+      setUser(userData);
+      localStorage.setItem('user', JSON.stringify(userData));
+
       setLoading(false);
-      return { success: true, user: foundUser };
+      return { success: true, user: userData };
+    } catch (err) {
+      setLoading(false);
+      console.error('Login error:', err.response?.data || err.message);
+      
+      const errorMessage = err.response?.data?.error || 
+                          err.response?.data?.message || 
+                          err.response?.data?.detail ||
+                          'Login failed. Please check your credentials.';
+      return { success: false, error: errorMessage };
     }
-    
-    setLoading(false);
-    return { success: false, error: 'Invalid credentials' };
   };
 
   const logout = () => {
     setUser(null);
     localStorage.removeItem('user');
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
   };
 
   return (
