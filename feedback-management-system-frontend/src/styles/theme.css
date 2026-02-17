@@ -1,0 +1,37 @@
+:root {
+  /* Your primary purple color */
+  --primary: #5e17eb;
+  --primary-light: #7e3ff2;
+  --primary-dark: #4a12b8;
+  --primary-rgb: 94, 23, 235;
+  
+  /* Light theme */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f9fa;
+  --bg-tertiary: #e9ecef;
+  --text-primary: #212529;
+  --text-secondary: #495057;
+  --text-muted: #6c757d;
+  --border-color: #dee2e6;
+  --card-bg: #ffffff;
+  --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --hover-bg: #f1f3f5;
+}
+
+[data-theme="dark"] {
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #2d2d2d;
+  --bg-tertiary: #404040;
+  --text-primary: #f8f9fa;
+  --text-secondary: #e9ecef;
+  --text-muted: #adb5bd;
+  --border-color: #404040;
+  --card-bg: #2d2d2d;
+  --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  --hover-bg: #404040;
+}
+
+/* Smooth transitions */
+* {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
