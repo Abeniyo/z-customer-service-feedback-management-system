@@ -43,15 +43,7 @@ const Login = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4 transition-colors duration-300">
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md p-8 relative border border-gray-200 dark:border-gray-700">
-        
-        {/* Theme Toggle Button */}
-        <button 
-          onClick={toggleTheme}
-          className="absolute top-4 right-4 p-2 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-300"
-          aria-label="Toggle theme"
-        >
-          <span className="text-xl">{isDark ? '☀️' : '🌙'}</span>
-        </button>
+ 
 
         {/* Logo Section */}
         <div className="text-center mb-8">

@@ -50,8 +50,13 @@ INSTALLED_APPS = [
     
     # Local apps
     'accounts',
-    'feedback',
     'reports',
+    'organization',
+    'customer',
+    'call_interaction',
+    'feedback',
+    'complaint',
+    'action_taken',
 ]
 
 MIDDLEWARE = [
@@ -204,3 +209,17 @@ AXES_COOLOFF_TIME = 0.01  # 0.01 hour lock
 AXES_RESET_ON_SUCCESS = True
 
 AXES_LOCKOUT_PARAMETERS = ["ip_address", "username"]
+
+
+
+
+REST_FRAMEWORK = {
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10,
+
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.SearchFilter',
+        'rest_framework.filters.OrderingFilter',
+    ]
+}
