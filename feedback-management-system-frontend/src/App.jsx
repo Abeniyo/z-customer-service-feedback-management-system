@@ -14,17 +14,17 @@ const Customers = lazy(() => import('./pages/callcenter/Customers'));
 const MyReports = lazy(() => import('./pages/callcenter/MyReports'));
 
 // Admin Pages (create these similarly)
-const AdminDashboard = lazy(() => import('./pages/admin/Dashboard'));
-const AdminAgents = lazy(() => import('./pages/admin/Agents'));
-const AdminReports = lazy(() => import('./pages/admin/Reports'));
-const AdminAnalytics = lazy(() => import('./pages/admin/Analytics'));
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
+const AdminAgents = lazy(() => import('./pages/admin/AdminAgents'));
+const AdminReports = lazy(() => import('./pages/admin/AdminReports'));
+const AdminAnalytics = lazy(() => import('./pages/admin/AdminAnalytics'));
+const AdminPage = lazy(() => import('./pages/admin/AdminPage'));
 
 // System Admin Pages (create these similarly)
-const SystemDashboard = lazy(() => import('./pages/systemadmin/Dashboard'));
-const SystemUsers = lazy(() => import('./pages/systemadmin/Users'));
-const SystemAuditLogs = lazy(() => import('./pages/systemadmin/AuditLogs'));
-const SystemSettings = lazy(() => import('./pages/systemadmin/Settings'));
-
+const SystemDashboard = lazy(() => import('./pages/systemadmin/SystemDashboard'));
+const SystemUsers = lazy(() => import('./pages/systemadmin/SystemUsers'));
+const SystemAuditLogs = lazy(() => import('./pages/systemadmin/SystemAuditLogs'));
+const SystemSettings = lazy(() => import('./pages/systemadmin/SystemSettings'));
 // Loading component
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
@@ -116,78 +116,106 @@ function AppRoutes() {
         />
         
         {/* Admin Routes */}
-        <Route 
-          path="/admin" 
-          element={
-            <PrivateRoute allowedRoles={['admin', 'systemadmin']}>
-              <AdminDashboard />
-            </PrivateRoute>
-          } 
-        />
+      <Route 
+        path="/admin" 
+        element={
+          <PrivateRoute allowedRoles={['admin', 'systemadmin']}>
+            <AdminDashboard />
+          </PrivateRoute>
+        } 
+      />
+
+      <Route 
+        path="/admin/dashboard" 
+        element={
+          <PrivateRoute allowedRoles={['admin', 'systemadmin']}>
+            <AdminDashboard />
+          </PrivateRoute>
+        } 
+      />
+
+      <Route 
+        path="/admin/agents" 
+        element={
+          <PrivateRoute allowedRoles={['admin', 'systemadmin']}>
+            <AdminAgents />
+          </PrivateRoute>
+        } 
+      />
+
+      <Route 
+        path="/admin/reports" 
+        element={
+          <PrivateRoute allowedRoles={['admin', 'systemadmin']}>
+            <AdminReports />
+          </PrivateRoute>
+        } 
+      />
+
+      <Route 
+        path="/admin/analytics" 
+        element={
+          <PrivateRoute allowedRoles={['admin', 'systemadmin']}>
+            <AdminAnalytics />
+          </PrivateRoute>
+        } 
+      />
+
+      {/* Optional: Keep the simple page if needed */}
+      <Route 
+        path="/admin/simple" 
+        element={
+          <PrivateRoute allowedRoles={['admin', 'systemadmin']}>
+            <AdminPage />
+          </PrivateRoute>
+        } 
+      />
         
-        <Route 
-          path="/admin/agents" 
-          element={
-            <PrivateRoute allowedRoles={['admin', 'systemadmin']}>
-              <AdminAgents />
-            </PrivateRoute>
-          } 
-        />
-        
-        <Route 
-          path="/admin/reports" 
-          element={
-            <PrivateRoute allowedRoles={['admin', 'systemadmin']}>
-              <AdminReports />
-            </PrivateRoute>
-          } 
-        />
-        
-        <Route 
-          path="/admin/analytics" 
-          element={
-            <PrivateRoute allowedRoles={['admin', 'systemadmin']}>
-              <AdminAnalytics />
-            </PrivateRoute>
-          } 
-        />
-        
-        {/* System Admin Routes */}
-        <Route 
-          path="/systemadmin" 
-          element={
-            <PrivateRoute allowedRoles={['systemadmin']}>
-              <SystemDashboard />
-            </PrivateRoute>
-          } 
-        />
-        
-        <Route 
-          path="/systemadmin/users" 
-          element={
-            <PrivateRoute allowedRoles={['systemadmin']}>
-              <SystemUsers />
-            </PrivateRoute>
-          } 
-        />
-        
-        <Route 
-          path="/systemadmin/audit-logs" 
-          element={
-            <PrivateRoute allowedRoles={['systemadmin']}>
-              <SystemAuditLogs />
-            </PrivateRoute>
-          } 
-        />
-        
-        <Route 
-          path="/systemadmin/settings" 
-          element={
-            <PrivateRoute allowedRoles={['systemadmin']}>
-              <SystemSettings />
-            </PrivateRoute>
-          } 
-        />
+<Route 
+                path="/systemadmin" 
+                element={
+                  <PrivateRoute allowedRoles={['systemadmin']}>
+                    <SystemDashboard />
+                  </PrivateRoute>
+                } 
+              />
+              
+              <Route 
+                path="/systemadmin/dashboard" 
+                element={
+                  <PrivateRoute allowedRoles={['systemadmin']}>
+                    <SystemDashboard />
+                  </PrivateRoute>
+                } 
+              />
+              
+              <Route 
+                path="/systemadmin/users" 
+                element={
+                  <PrivateRoute allowedRoles={['systemadmin']}>
+                    <SystemUsers />
+                  </PrivateRoute>
+                } 
+              />
+              
+              <Route 
+                path="/systemadmin/audit-logs" 
+                element={
+                  <PrivateRoute allowedRoles={['systemadmin']}>
+                    <SystemAuditLogs />
+                  </PrivateRoute>
+                } 
+              />
+              
+              <Route 
+                path="/systemadmin/settings" 
+                element={
+                  <PrivateRoute allowedRoles={['systemadmin']}>
+                    <SystemSettings />
+                  </PrivateRoute>
+                } 
+              />
+
         
         {/* Default Routes */}
         <Route 
