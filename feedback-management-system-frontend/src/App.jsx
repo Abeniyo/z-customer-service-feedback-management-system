@@ -6,6 +6,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 // Lazy load pages for better performance
 const Login = lazy(() => import('./pages/Login'));
+const Landing = lazy(() => import('./pages/landing/Landing'));
 
 // Call Center Pages
 const CallCenterDashboard = lazy(() => import('./pages/callcenter/CallCenterPage'));
@@ -69,6 +70,8 @@ function AppRoutes() {
     <Suspense fallback={<PageLoader />}>
       <Routes>
         {/* Public Routes */}
+        <Route path="/" element={<Landing />} />
+        <Route path="/landing" element={<Landing />} />
         <Route 
           path="/login" 
           element={
