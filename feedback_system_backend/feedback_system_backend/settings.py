@@ -57,6 +57,11 @@ INSTALLED_APPS = [
     'feedback',
     'complaint',
     'action_taken',
+
+    'company',
+    'branch',
+    'focal',
+    'role',
 ]
 
 MIDDLEWARE = [

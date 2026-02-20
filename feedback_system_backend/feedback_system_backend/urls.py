@@ -28,6 +28,11 @@ urlpatterns = [
     path("api/v1/feedbacks/", include("feedback.urls")),
     path("api/v1/complaints/", include("complaint.urls")),
     path("api/v1/actions/", include("action_taken.urls")),
+
+    path("api/v1/company/", include("company.urls")),
+    path("api/v1/branch/", include("branch.urls")),
+    path("api/v1/role/", include("role.urls")),
+    path("api/v1/focal/", include("focal.urls")),
 ]
 
 
