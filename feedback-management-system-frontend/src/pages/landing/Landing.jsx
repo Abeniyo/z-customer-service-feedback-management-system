@@ -45,7 +45,7 @@ const LandingPage = () => {
         {/* <Integrations /> */}
         <Testimonials />
         <FAQ />
-        <FinalCTA />
+        {/* <FinalCTA /> */}
       </main>
       
       <Footer />
