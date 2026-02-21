@@ -96,45 +96,6 @@ const Features = () => {
           ))}
         </div>
 
-        {/* Multi-channel Integration Showcase */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-xl"
-        >
-          <div className="text-center mb-8">
-            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-              Connect All Your Channels
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400">
-              Integrate with every platform your customers use
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
-            {channels.map((channel, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                className="flex flex-col items-center p-4 rounded-lg hover:bg-gray-50 
-                         dark:hover:bg-gray-800 transition group"
-              >
-                <div className={`w-12 h-12 bg-${channel.color}-100 dark:bg-${channel.color}-900/30 
-                              rounded-full flex items-center justify-center text-${channel.color}-600 
-                              mb-2 group-hover:scale-110 transition`}>
-                  {channel.icon}
-                </div>
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {channel.name}
-                </span>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
       </div>
     </section>
   );

@@ -4,26 +4,16 @@ import { motion } from 'framer-motion';
 import { 
   FiAlertCircle, 
   FiClock, 
-  FiUsers, 
   FiBarChart2, 
   FiCheckCircle, 
   FiTrendingUp, 
-  FiMessageCircle, 
   FiPieChart,
-  FiFrown,
-  FiSmile
+  FiZap,
+  FiUsers
 } from 'react-icons/fi';
 
 const ProblemSolution = () => {
   const problems = [
-    {
-      icon: <FiAlertCircle className="w-6 h-6" />,
-      title: "Scattered Feedback",
-      description: "Feedback is spread across emails, chat, social media, and surveys",
-      stat: "78%",
-      statLabel: "of businesses miss feedback",
-      color: "red"
-    },
     {
       icon: <FiClock className="w-6 h-6" />,
       title: "No Real-time Insights",
@@ -70,13 +60,6 @@ const ProblemSolution = () => {
       title: "Automated Reports",
       description: "Daily/weekly reports sent directly to your inbox",
       benefit: "Save 8+ hours per week",
-      color: "green"
-    },
-    {
-      icon: <FiMessageCircle className="w-6 h-6" />,
-      title: "Multi-channel Integration",
-      description: "Connect email, SMS, WhatsApp, and social media",
-      benefit: "Meet customers where they are",
       color: "green"
     }
   ];
@@ -130,11 +113,11 @@ const ProblemSolution = () => {
         >
           <div className="inline-flex items-center gap-2 bg-purple-100 dark:bg-purple-900/30 
                         px-4 py-2 rounded-full mb-4">
-            <FiFrown className="w-4 h-4 text-purple-600" />
+            <FiAlertCircle className="w-4 h-4 text-purple-600" />
             <span className="text-sm font-medium text-purple-600 dark:text-purple-400">
               The Problem
             </span>
-            <FiSmile className="w-4 h-4 text-purple-600 ml-2" />
+            <FiZap className="w-4 h-4 text-purple-600 ml-2" />
             <span className="text-sm font-medium text-purple-600 dark:text-purple-400">
               Our Solution
             </span>
@@ -174,8 +157,8 @@ const ProblemSolution = () => {
             <div className="bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 
                           rounded-2xl p-6 md:p-8 h-full">
               <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-                <span className="text-3xl">😟</span> 
-                What You're Dealing With
+                <FiAlertCircle className="w-6 h-6 text-red-500" />
+                <span>What You're Dealing With</span>
               </h3>
               
               <div className="space-y-4">
@@ -240,8 +223,8 @@ const ProblemSolution = () => {
             <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 
                           rounded-2xl p-6 md:p-8 h-full">
               <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-                <span className="text-3xl">✨</span> 
-                How FeedbackFlow Fixes It
+                <FiZap className="w-6 h-6 text-green-500" />
+                <span>How FeedbackFlow Fixes It</span>
               </h3>
               
               <div className="space-y-4">
@@ -292,7 +275,7 @@ const ProblemSolution = () => {
           </motion.div>
         </div>
 
-        {/* Comparison Banner */}
+        {/* Comparison Banner - Responsive */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -300,23 +283,45 @@ const ProblemSolution = () => {
           transition={{ delay: 0.4 }}
           className="mt-12 bg-gray-50 dark:bg-gray-800 rounded-xl p-6 text-center"
         >
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <div className="text-red-600 font-bold mb-2">Without FeedbackFlow</div>
-              <ul className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
-                <li>❌ Missed customer issues</li>
-                <li>❌ Slow response times</li>
-                <li>❌ High churn rate</li>
-                <li>❌ Manual reporting</li>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-4">
+            <div className="p-4 bg-white dark:bg-gray-900 rounded-lg shadow-sm">
+              <div className="text-red-600 font-bold mb-3 flex items-center justify-center gap-2">
+                <FiAlertCircle className="w-5 h-5" />
+                Without FeedbackFlow
+              </div>
+              <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                <li className="flex items-center gap-2">
+                  <span className="text-red-500">✕</span> No real-time insights
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-red-500">✕</span> Slow response times
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-red-500">✕</span> High churn rate
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-red-500">✕</span> Manual reporting
+                </li>
               </ul>
             </div>
-            <div>
-              <div className="text-green-600 font-bold mb-2">With FeedbackFlow</div>
-              <ul className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
-                <li>✅ Instant alerts</li>
-                <li>✅ 60% faster response</li>
-                <li>✅ 35% better retention</li>
-                <li>✅ Automated insights</li>
+            <div className="p-4 bg-white dark:bg-gray-900 rounded-lg shadow-sm">
+              <div className="text-green-600 font-bold mb-3 flex items-center justify-center gap-2">
+                <FiZap className="w-5 h-5" />
+                With FeedbackFlow
+              </div>
+              <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                <li className="flex items-center gap-2">
+                  <span className="text-green-500">✓</span> Instant alerts
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-green-500">✓</span> 60% faster response
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-green-500">✓</span> 35% better retention
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-green-500">✓</span> Automated insights
+                </li>
               </ul>
             </div>
           </div>
