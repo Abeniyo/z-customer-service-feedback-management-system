@@ -42,6 +42,7 @@ const LandingPage = () => {
         <HeroSection />
         <ProblemSolution />
         <Features />
+        {/* <HowItWorks /> */}
         {/* <Integrations /> */}
         <Testimonials />
         <FAQ />

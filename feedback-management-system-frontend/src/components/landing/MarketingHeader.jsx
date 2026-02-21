@@ -17,6 +17,7 @@ const MarketingHeader = ({ isMenuOpen, setIsMenuOpen }) => {
   }, []);
 
   const navLinks = [
+    { name: 'Home', href: '#home' },
     { name: 'Features', href: '#features' },
     { name: 'Testimonials', href: '#testimonials' },
     { name: 'FAQ', href: '#faq' },
