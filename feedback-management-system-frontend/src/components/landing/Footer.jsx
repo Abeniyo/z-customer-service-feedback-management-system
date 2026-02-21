@@ -22,9 +22,7 @@ const Footer = () => {
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center gap-2 mb-4">
               <img src={logo} alt="FeedbackFlow" className="h-8 w-auto" />
-              <span className="font-semibold text-lg text-gray-900 dark:text-white">
-                FeedbackFlow
-              </span>
+              
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
               Empowering businesses with intelligent feedback management and customer 
