@@ -54,9 +54,9 @@ const Login = () => {
               className="w-20 h-20 object-contain"
             />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">FeedbackFlow</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Gebeta</h1>
           <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-            Customer Service Feedback Management
+            Customer Service Feedback Management System
           </p>
         </div>
 
