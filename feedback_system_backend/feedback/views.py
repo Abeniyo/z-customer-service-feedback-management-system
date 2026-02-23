@@ -2,8 +2,7 @@ from rest_framework.viewsets import ModelViewSet
 from .models import Feedback
 from .serializers import FeedbackSerializer
 class FeedbackViewSet(ModelViewSet):
-
-    queryset = Feedback.objects.filter(is_deleted=False)
+    queryset = Feedback.objects.filter(is_deleted=False).order_by('-created_at')
     serializer_class = FeedbackSerializer
 
     filterset_fields = "__all__"

@@ -2,8 +2,10 @@ from rest_framework import serializers
 from .models import Feedback
 from complaint.models import Complaint
 from action_taken.models import ActionTaken
+from customer.serializers import CustomerSerializer
 
 class FeedbackSerializer(serializers.ModelSerializer):
+    customer = CustomerSerializer(read_only=True)
     class Meta:
         model = Feedback
         fields = "__all__"
