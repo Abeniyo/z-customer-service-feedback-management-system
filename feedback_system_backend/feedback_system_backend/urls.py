@@ -33,6 +33,7 @@ urlpatterns = [
     path("api/v1/branch/", include("branch.urls")),
     path("api/v1/role/", include("role.urls")),
     path("api/v1/focal/", include("focal.urls")),
+    path("api/v1/reports/", include("reports.urls")),
 ]
 
 

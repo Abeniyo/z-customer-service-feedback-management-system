@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     'branch',
     'focal',
     'role',
+   
 ]
 
 MIDDLEWARE = [

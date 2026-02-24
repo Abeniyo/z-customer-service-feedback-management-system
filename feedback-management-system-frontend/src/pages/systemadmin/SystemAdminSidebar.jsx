@@ -7,19 +7,25 @@ import logo from '../../assets/images/logo.png';
 // Import React Icons
 import { 
   FiHome, 
-  FiEdit, 
   FiUsers, 
-  FiBarChart2,
+  FiKey,
+  FiFileText,
+  FiSettings,
   FiLogOut,
   FiMenu,
   FiX,
-  FiSettings,
-  FiHelpCircle,
   FiChevronRight,
-  FiChevronLeft
+  FiChevronLeft,
+  FiShield,
+  FiActivity,
+  FiUserCheck,
+  FiLock,
+  FiClipboard,
+  FiDatabase,
+  FiServer
 } from 'react-icons/fi';
 
-const CallCenterSidebar = () => {
+const SystemAdminSidebar = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -27,17 +33,20 @@ const CallCenterSidebar = () => {
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   const menuItems = [
-    { path: '/callcenter', label: 'Dashboard', icon: FiHome },
-    { path: '/callcenter/customers', label: 'Customers', icon: FiUsers },
-    { path: '/callcenter/new-feedback', label: 'Feedback', icon: FiEdit },
-       { path: '/callcenter/focal', label: 'Focal', icon: FiUsers },
-    { path: '/callcenter/complain', label: 'Complain', icon: FiEdit },
-    { path: '/callcenter/my-reports', label: 'My Reports', icon: FiBarChart2 },
+    { path: '/systemadmin', label: 'Dashboard', icon: FiHome },
+    
+    { path: '/systemadmin/company', label: 'Company Management', icon: FiUserCheck },
+    { path: '/systemadmin/users', label: 'User Management', icon: FiUsers },
+    { path: '/systemadmin/roles', label: 'Role Management', icon: FiShield },
+    { path: '/systemadmin/permissions', label: 'Permissions', icon: FiLock },
+    { path: '/systemadmin/audit-logs', label: 'Audit Logs', icon: FiFileText },
+    { path: '/systemadmin/activity', label: 'System Activity', icon: FiActivity },
+    { path: '/systemadmin/backup', label: 'Backup & Restore', icon: FiDatabase },
+    { path: '/systemadmin/system-health', label: 'System Health', icon: FiServer },
   ];
 
   const bottomMenuItems = [
-    
-    
+  
   ];
 
   const handleLogout = () => {
@@ -46,41 +55,35 @@ const CallCenterSidebar = () => {
 
   const isActive = (path) => location.pathname === path;
 
-  // Sidebar content with ChatGPT/DeepSeek style
   const SidebarContent = () => (
     <>
-    {/* Logo Section - Clean and Centered */}
-    <div className="flex-shrink-0 px-4 py-8">
-    <div className="flex flex-col items-center justify-center">
-        
-        {/* Bigger Logo */}
-        <div className="relative flex justify-center">
-        <img 
-            src={logo} 
-            alt="FeedbackFlow" 
-            className="h-16 w-auto object-contain" 
-        />
+      {/* Logo Section */}
+      <div className="flex-shrink-0 px-4 py-8">
+        <div className="flex flex-col items-center justify-center">
+          <div className="relative flex justify-center">
+            <img 
+              src={logo} 
+              alt="System Admin" 
+              className="h-16 w-auto object-contain" 
+            />
+          </div>
+
+          {!isCollapsed && (
+            <motion.div
+              initial={{ opacity: 0, y: -5 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="mt-2 text-center"
+            >
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                System Administrator
+              </p>
+            </motion.div>
+          )}
         </div>
+      </div>
 
-        {!isCollapsed && (
-        <motion.div
-            initial={{ opacity: 0, y: -5 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-            className="mt-2 text-center"
-        >
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            Call Center
-            </p>
-        </motion.div>
-        )}
-
-    </div>
-    </div>
-
-
-
-      {/* Navigation Menu - Clean with better spacing */}
+      {/* Navigation Menu */}
       <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400">
         {menuItems.map((item) => {
           const Icon = item.icon;
@@ -98,40 +101,38 @@ const CallCenterSidebar = () => {
                 relative flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} 
                 px-3 py-2.5 rounded-xl transition-all duration-200 group
                 ${active 
-                  ? 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20' 
-                  : 'text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50/50 dark:hover:bg-purple-900/10'
+                  ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20' 
+                  : 'text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-900/10'
                 }
               `}
             >
               {active && (
                 <motion.div
-                  layoutId="activeCallCenterTab"
-                  className="absolute inset-0 rounded-xl bg-purple-50 dark:bg-purple-900/20"
+                  layoutId="activeSystemAdminTab"
+                  className="absolute inset-0 rounded-xl bg-blue-50 dark:bg-blue-900/20"
                   transition={{ type: "spring", duration: 0.5 }}
                 />
               )}
               
               <div className="relative z-10">
                 <Icon className={`w-5 h-5 transition-transform duration-200 group-hover:scale-110 
-                                ${active ? 'text-purple-600' : 'text-gray-500 dark:text-gray-400'}`} />
+                                ${active ? 'text-blue-600' : 'text-gray-500 dark:text-gray-400'}`} />
               </div>
               
               {!isCollapsed && (
                 <span className="flex-1 relative z-10 text-sm font-medium">{item.label}</span>
               )}
               
-              {/* Active indicator dot for collapsed mode */}
               {isCollapsed && active && (
-                <div className="absolute right-0 w-1 h-5 bg-purple-600 rounded-full"></div>
+                <div className="absolute right-0 w-1 h-5 bg-blue-600 rounded-full"></div>
               )}
             </Link>
           );
         })}
       </nav>
 
-      {/* Bottom Section - Settings, Help, and Logout integrated */}
+      {/* Bottom Section */}
       <div className="flex-shrink-0 px-3 py-4 border-t border-gray-100 dark:border-gray-700/50">
-        {/* Settings and Help */}
         <div className="space-y-1 mb-3">
           {bottomMenuItems.map((item) => {
             const Icon = item.icon;
@@ -142,8 +143,8 @@ const CallCenterSidebar = () => {
                 className={`
                   flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} 
                   px-3 py-2 rounded-lg transition-all duration-200
-                  text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 
-                  hover:bg-purple-50/50 dark:hover:bg-purple-900/10
+                  text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 
+                  hover:bg-blue-50/50 dark:hover:bg-blue-900/10
                 `}
               >
                 <Icon className="w-4 h-4" />
@@ -153,7 +154,6 @@ const CallCenterSidebar = () => {
           })}
         </div>
 
-        {/* Logout Button - Styled like ChatGPT */}
         <button
           onClick={handleLogout}
           className={`
@@ -167,10 +167,9 @@ const CallCenterSidebar = () => {
           {!isCollapsed && <span className="text-sm">Logout</span>}
         </button>
 
-        {/* Version info - subtle */}
         {!isCollapsed && (
           <div className="mt-4 px-3">
-            <p className="text-xs text-gray-400 dark:text-gray-500">Version 2.0.0</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500">System Admin v1.0.0</p>
           </div>
         )}
       </div>
@@ -184,7 +183,7 @@ const CallCenterSidebar = () => {
         onClick={() => setMobileOpen(true)}
         className="lg:hidden fixed top-4 left-4 z-50 p-2.5 bg-white dark:bg-gray-800 
                    rounded-xl shadow-lg border border-gray-200 dark:border-gray-700
-                   hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
+                   hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
       >
         <FiMenu className="w-5 h-5 text-gray-600 dark:text-gray-300" />
       </button>
@@ -200,7 +199,7 @@ const CallCenterSidebar = () => {
         />
       )}
 
-      {/* Sidebar - Fixed position on desktop */}
+      {/* Sidebar */}
       <aside className={`
         fixed lg:static inset-y-0 left-0 z-50
         transform ${mobileOpen ? 'translate-x-0' : '-translate-x-full'} 
@@ -209,7 +208,6 @@ const CallCenterSidebar = () => {
         bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700
         flex flex-col h-screen shadow-lg lg:shadow-none
       `}>
-        {/* Desktop Collapse Toggle - Moved to bottom for cleaner look */}
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
           className="hidden lg:flex absolute -right-3 top-1/2 transform -translate-y-1/2 
@@ -230,4 +228,4 @@ const CallCenterSidebar = () => {
   );
 };
 
-export default CallCenterSidebar;
+export default SystemAdminSidebar;

@@ -11,8 +11,10 @@ const Landing = lazy(() => import('./pages/landing/Landing'));
 // Call Center Pages
 const CallCenterDashboard = lazy(() => import('./pages/callcenter/CallCenterPage'));
 const NewFeedback = lazy(() => import('./pages/callcenter/NewFeedback'));
+const Complain = lazy(() => import('./pages/callcenter/ComplainManagement'));
 const Customers = lazy(() => import('./pages/callcenter/Customers'));
 const MyReports = lazy(() => import('./pages/callcenter/MyReports'));
+const FocalManagement = lazy(() => import('./pages/callcenter/FocalManagement'));
 
 // Admin Pages (create these similarly)
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
@@ -22,7 +24,8 @@ const AdminAnalytics = lazy(() => import('./pages/admin/AdminAnalytics'));
 const AdminPage = lazy(() => import('./pages/admin/AdminPage'));
 
 // System Admin Pages (create these similarly)
-const SystemDashboard = lazy(() => import('./pages/systemadmin/SystemDashboard'));
+const SystemDashboard = lazy(() => import('./pages/systemadmin/SystemAdminDashboard'));
+const CompanyBranchManagement = lazy(() => import('./pages/systemadmin/CompanyBranchManagement'));
 const SystemUsers = lazy(() => import('./pages/systemadmin/SystemUsers'));
 const SystemAuditLogs = lazy(() => import('./pages/systemadmin/SystemAuditLogs'));
 const SystemSettings = lazy(() => import('./pages/systemadmin/SystemSettings'));
@@ -96,6 +99,23 @@ function AppRoutes() {
           element={
             <PrivateRoute allowedRoles={['callcenter', 'admin', 'systemadmin']}>
               <NewFeedback />
+            </PrivateRoute>
+          } 
+        />
+        <Route 
+          path="/callcenter/focal" 
+          element={
+            <PrivateRoute allowedRoles={['callcenter', 'admin', 'systemadmin']}>
+              <FocalManagement />
+            </PrivateRoute>
+          } 
+        />
+
+        <Route 
+          path="/callcenter/complain" 
+          element={
+            <PrivateRoute allowedRoles={['callcenter', 'admin', 'systemadmin']}>
+              <Complain />
             </PrivateRoute>
           } 
         />
@@ -200,7 +220,14 @@ function AppRoutes() {
                   </PrivateRoute>
                 } 
               />
-              
+              <Route 
+                path="/systemadmin/company" 
+                element={
+                  <PrivateRoute allowedRoles={['systemadmin']}>
+                    <CompanyBranchManagement />
+                  </PrivateRoute>
+                } 
+              />              
               <Route 
                 path="/systemadmin/audit-logs" 
                 element={
