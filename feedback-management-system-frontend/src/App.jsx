@@ -27,8 +27,24 @@ const AdminPage = lazy(() => import('./pages/admin/AdminPage'));
 const SystemDashboard = lazy(() => import('./pages/systemadmin/SystemAdminDashboard'));
 const CompanyBranchManagement = lazy(() => import('./pages/systemadmin/CompanyBranchManagement'));
 const SystemUsers = lazy(() => import('./pages/systemadmin/SystemUsers'));
-const SystemAuditLogs = lazy(() => import('./pages/systemadmin/SystemAuditLogs'));
-const SystemSettings = lazy(() => import('./pages/systemadmin/SystemSettings'));
+const DatabaseBackup = lazy(() => import('./pages/systemadmin/DatabaseBackup'));
+const SystemHealth = lazy(() => import('./pages/systemadmin/SystemHealth'));
+
+
+
+const BranchManagerDashboard = lazy(() => import('./pages/manager/BranchManagerDashboard'));
+const BranchAgents = lazy(() => import('./pages/manager/BranchAgents'));
+const BranchCalls = lazy(() => import('./pages/manager/BranchCalls'));
+const BranchPerformance = lazy(() => import('./pages/manager/BranchPerformance'));
+const BranchSchedule = lazy(() => import('./pages/manager/BranchSchedule'));
+const BranchReports = lazy(() => import('./pages/manager/BranchReports'));
+const BranchInfo = lazy(() => import('./pages/manager/BranchInfo'));
+const BranchSettings = lazy(() => import('./pages/manager/BranchSettings'));
+const BranchProfile = lazy(() => import('./pages/manager/BranchProfile'));
+const BranchHelp = lazy(() => import('./pages/manager/BranchHelp'));
+
+
+
 // Loading component
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
@@ -229,22 +245,125 @@ function AppRoutes() {
                 } 
               />              
               <Route 
-                path="/systemadmin/audit-logs" 
+                path="/systemadmin/backup" 
                 element={
                   <PrivateRoute allowedRoles={['systemadmin']}>
-                    <SystemAuditLogs />
+                    <DatabaseBackup />
                   </PrivateRoute>
                 } 
               />
-              
               <Route 
-                path="/systemadmin/settings" 
+                path="/systemadmin/system-health" 
                 element={
                   <PrivateRoute allowedRoles={['systemadmin']}>
-                    <SystemSettings />
+                    <SystemHealth />
                   </PrivateRoute>
                 } 
               />
+
+
+
+
+
+{/* Branch Manager Routes */}
+<Route 
+  path="/manager" 
+  element={
+    <PrivateRoute allowedRoles={['manager', 'admin', 'systemadmin']}>
+      <BranchManagerDashboard />
+    </PrivateRoute>
+  } 
+/>
+
+<Route 
+  path="/manager/dashboard" 
+  element={
+    <PrivateRoute allowedRoles={['manager', 'admin', 'systemadmin']}>
+      <BranchManagerDashboard />
+    </PrivateRoute>
+  } 
+/>
+
+<Route 
+  path="/manager/agents" 
+  element={
+    <PrivateRoute allowedRoles={['manager', 'admin', 'systemadmin']}>
+      <BranchAgents />
+    </PrivateRoute>
+  } 
+/>
+
+<Route 
+  path="/manager/calls" 
+  element={
+    <PrivateRoute allowedRoles={['manager', 'admin', 'systemadmin']}>
+      <BranchCalls />
+    </PrivateRoute>
+  } 
+/>
+
+    <Route 
+      path="/manager/performance" 
+      element={
+        <PrivateRoute allowedRoles={['manager', 'admin', 'systemadmin']}>
+          <BranchPerformance />
+        </PrivateRoute>
+      } 
+    />
+
+    <Route 
+      path="/manager/schedule" 
+      element={
+        <PrivateRoute allowedRoles={['manager', 'admin', 'systemadmin']}>
+          <BranchSchedule />
+        </PrivateRoute>
+      } 
+    />
+
+    <Route 
+      path="/manager/reports" 
+      element={
+        <PrivateRoute allowedRoles={['manager', 'admin', 'systemadmin']}>
+          <BranchReports />
+        </PrivateRoute>
+      } 
+    />
+
+    <Route 
+      path="/manager/branch-info" 
+      element={
+        <PrivateRoute allowedRoles={['manager', 'admin', 'systemadmin']}>
+          <BranchInfo />
+        </PrivateRoute>
+      } 
+    />
+
+    <Route 
+      path="/manager/settings" 
+      element={
+        <PrivateRoute allowedRoles={['manager', 'admin', 'systemadmin']}>
+          <BranchSettings />
+        </PrivateRoute>
+      } 
+    />
+
+    <Route 
+      path="/manager/profile" 
+      element={
+        <PrivateRoute allowedRoles={['manager', 'admin', 'systemadmin']}>
+          <BranchProfile />
+        </PrivateRoute>
+      } 
+    />
+
+    <Route 
+      path="/manager/help" 
+      element={
+        <PrivateRoute allowedRoles={['manager', 'admin', 'systemadmin']}>
+          <BranchHelp />
+        </PrivateRoute>
+      } 
+    />
 
         
         {/* Default Routes */}

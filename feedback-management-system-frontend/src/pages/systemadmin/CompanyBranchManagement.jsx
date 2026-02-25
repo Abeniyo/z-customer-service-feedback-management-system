@@ -77,11 +77,37 @@ const CompanyBranchManagement = () => {
     limit: 10
   });
 
+  // Filtered data for current tab
+  const filteredCompanies = companies.filter(company =>
+    company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (company.description && company.description.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
+  const filteredBranches = branches.filter(branch =>
+    branch.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (branch.location && branch.location.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (branch.company_name && branch.company_name.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
   // Fetch companies on component mount
   useEffect(() => {
     fetchCompanies();
     fetchBranches();
   }, []);
+
+  // Fetch companies when pagination changes
+  useEffect(() => {
+    if (activeTab === 'companies') {
+      fetchCompanies();
+    }
+  }, [companyPagination.page, companyPagination.limit]);
+
+  // Fetch branches when pagination changes
+  useEffect(() => {
+    if (activeTab === 'branches') {
+      fetchBranches();
+    }
+  }, [branchPagination.page, branchPagination.limit]);
 
   // Fetch companies with pagination and search
   const fetchCompanies = async () => {
@@ -102,18 +128,18 @@ const CompanyBranchManagement = () => {
       // Handle paginated response
       if (response.data.results) {
         setCompanies(response.data.results);
-        setCompanyPagination({
-          ...companyPagination,
+        setCompanyPagination(prev => ({
+          ...prev,
           totalItems: response.data.count,
-          totalPages: Math.ceil(response.data.count / companyPagination.limit)
-        });
+          totalPages: Math.ceil(response.data.count / prev.limit)
+        }));
       } else {
         setCompanies(response.data);
-        setCompanyPagination({
-          ...companyPagination,
+        setCompanyPagination(prev => ({
+          ...prev,
           totalItems: response.data.length,
-          totalPages: Math.ceil(response.data.length / companyPagination.limit)
-        });
+          totalPages: Math.ceil(response.data.length / prev.limit)
+        }));
       }
     } catch (err) {
       console.error('Error fetching companies:', err);
@@ -142,18 +168,18 @@ const CompanyBranchManagement = () => {
       // Handle paginated response
       if (response.data.results) {
         setBranches(response.data.results);
-        setBranchPagination({
-          ...branchPagination,
+        setBranchPagination(prev => ({
+          ...prev,
           totalItems: response.data.count,
-          totalPages: Math.ceil(response.data.count / branchPagination.limit)
-        });
+          totalPages: Math.ceil(response.data.count / prev.limit)
+        }));
       } else {
         setBranches(response.data);
-        setBranchPagination({
-          ...branchPagination,
+        setBranchPagination(prev => ({
+          ...prev,
           totalItems: response.data.length,
-          totalPages: Math.ceil(response.data.length / branchPagination.limit)
-        });
+          totalPages: Math.ceil(response.data.length / prev.limit)
+        }));
       }
     } catch (err) {
       console.error('Error fetching branches:', err);
@@ -182,7 +208,7 @@ const CompanyBranchManagement = () => {
     setError(null);
 
     try {
-      const response = await api.post('/company/', companyFormData);
+      await api.post('/company/', companyFormData);
       setSuccess('Company created successfully!');
       setShowCompanyModal(false);
       resetCompanyForm();
@@ -204,7 +230,7 @@ const CompanyBranchManagement = () => {
     setError(null);
 
     try {
-      const response = await api.patch(`/company/${selectedCompany.id}/`, companyFormData);
+      await api.patch(`/company/${selectedCompany.id}/`, companyFormData);
       setSuccess('Company updated successfully!');
       setShowCompanyModal(false);
       resetCompanyForm();
@@ -247,7 +273,7 @@ const CompanyBranchManagement = () => {
     setError(null);
 
     try {
-      const response = await api.post('/branch/', branchFormData);
+      await api.post('/branch/', branchFormData);
       setSuccess('Branch created successfully!');
       setShowBranchModal(false);
       resetBranchForm();
@@ -269,7 +295,7 @@ const CompanyBranchManagement = () => {
     setError(null);
 
     try {
-      const response = await api.patch(`/branch/${selectedBranch.id}/`, branchFormData);
+      await api.patch(`/branch/${selectedBranch.id}/`, branchFormData);
       setSuccess('Branch updated successfully!');
       setShowBranchModal(false);
       resetBranchForm();
@@ -374,490 +400,20 @@ const CompanyBranchManagement = () => {
     }
   };
 
-  // Filtered data for current tab
-  const filteredCompanies = companies.filter(company =>
-    company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (company.description && company.description.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  // Handle search with debounce
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (activeTab === 'companies') {
+        setCompanyPagination(prev => ({ ...prev, page: 1 }));
+        fetchCompanies();
+      } else {
+        setBranchPagination(prev => ({ ...prev, page: 1 }));
+        fetchBranches();
+      }
+    }, 500);
 
-  const filteredBranches = branches.filter(branch =>
-    branch.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (branch.location && branch.location.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (branch.company_name && branch.company_name.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
-
-  // Company Modal Component
-  const CompanyModal = () => {
-    if (!showCompanyModal) return null;
-
-    const isViewMode = modalMode === 'view';
-
-    return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-md w-full">
-          <div className="p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                {modalMode === 'add' ? 'Add New Company' : 
-                 modalMode === 'edit' ? 'Edit Company' : 'Company Details'}
-              </h2>
-              <button
-                onClick={() => {
-                  setShowCompanyModal(false);
-                  resetCompanyForm();
-                }}
-                className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-              >
-                <FiX className="w-6 h-6" />
-              </button>
-            </div>
-
-            <form onSubmit={modalMode === 'add' ? handleCreateCompany : handleUpdateCompany}>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Company Name *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={companyFormData.name}
-                    onChange={(e) => setCompanyFormData({...companyFormData, name: e.target.value})}
-                    disabled={isViewMode}
-                    placeholder="Enter company name"
-                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
-                             bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                             focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent
-                             disabled:bg-gray-100 disabled:cursor-not-allowed"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Description
-                  </label>
-                  <textarea
-                    value={companyFormData.description}
-                    onChange={(e) => setCompanyFormData({...companyFormData, description: e.target.value})}
-                    disabled={isViewMode}
-                    placeholder="Enter company description"
-                    rows="4"
-                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
-                             bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                             focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent
-                             disabled:bg-gray-100 disabled:cursor-not-allowed resize-none"
-                  />
-                </div>
-              </div>
-
-              {!isViewMode && (
-                <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowCompanyModal(false);
-                      resetCompanyForm();
-                    }}
-                    className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2 disabled:opacity-50"
-                  >
-                    {loading ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        {modalMode === 'add' ? 'Creating...' : 'Updating...'}
-                      </>
-                    ) : (
-                      <>
-                        <FiSave className="w-4 h-4" />
-                        {modalMode === 'add' ? 'Create Company' : 'Update Company'}
-                      </>
-                    )}
-                  </button>
-                </div>
-              )}
-
-              {isViewMode && (
-                <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowCompanyModal(false);
-                      resetCompanyForm();
-                    }}
-                    className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                  >
-                    Close
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowCompanyModal(false);
-                      handleEditCompany(selectedCompany);
-                    }}
-                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
-                  >
-                    <FiEdit2 className="w-4 h-4" />
-                    Edit
-                  </button>
-                </div>
-              )}
-            </form>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  // Branch Modal Component
-  const BranchModal = () => {
-    if (!showBranchModal) return null;
-
-    const isViewMode = modalMode === 'view';
-
-    return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-md w-full">
-          <div className="p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                {modalMode === 'add' ? 'Add New Branch' : 
-                 modalMode === 'edit' ? 'Edit Branch' : 'Branch Details'}
-              </h2>
-              <button
-                onClick={() => {
-                  setShowBranchModal(false);
-                  resetBranchForm();
-                }}
-                className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-              >
-                <FiX className="w-6 h-6" />
-              </button>
-            </div>
-
-            <form onSubmit={modalMode === 'add' ? handleCreateBranch : handleUpdateBranch}>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Branch Name *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={branchFormData.name}
-                    onChange={(e) => setBranchFormData({...branchFormData, name: e.target.value})}
-                    disabled={isViewMode}
-                    placeholder="Enter branch name"
-                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
-                             bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                             focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent
-                             disabled:bg-gray-100 disabled:cursor-not-allowed"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Location
-                  </label>
-                  <input
-                    type="text"
-                    value={branchFormData.location}
-                    onChange={(e) => setBranchFormData({...branchFormData, location: e.target.value})}
-                    disabled={isViewMode}
-                    placeholder="Enter branch location"
-                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
-                             bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                             focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent
-                             disabled:bg-gray-100 disabled:cursor-not-allowed"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Company *
-                  </label>
-                  <select
-                    required
-                    value={branchFormData.company}
-                    onChange={(e) => setBranchFormData({...branchFormData, company: e.target.value})}
-                    disabled={isViewMode}
-                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
-                             bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                             focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent
-                             disabled:bg-gray-100 disabled:cursor-not-allowed"
-                  >
-                    <option value="">Select a company</option>
-                    {companies.map(company => (
-                      <option key={company.id} value={company.id}>
-                        {company.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {!isViewMode && (
-                <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowBranchModal(false);
-                      resetBranchForm();
-                    }}
-                    className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2 disabled:opacity-50"
-                  >
-                    {loading ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        {modalMode === 'add' ? 'Creating...' : 'Updating...'}
-                      </>
-                    ) : (
-                      <>
-                        <FiSave className="w-4 h-4" />
-                        {modalMode === 'add' ? 'Create Branch' : 'Update Branch'}
-                      </>
-                    )}
-                  </button>
-                </div>
-              )}
-
-              {isViewMode && (
-                <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowBranchModal(false);
-                      resetBranchForm();
-                    }}
-                    className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                  >
-                    Close
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowBranchModal(false);
-                      handleEditBranch(selectedBranch);
-                    }}
-                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
-                  >
-                    <FiEdit2 className="w-4 h-4" />
-                    Edit
-                  </button>
-                </div>
-              )}
-            </form>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  // View Modal Component
-  const ViewModal = () => {
-    if (!showViewModal || !selectedCompany && !selectedBranch) return null;
-
-    const isCompany = !!selectedCompany;
-
-    return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-2xl w-full">
-          <div className="p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                {isCompany ? 'Company Details' : 'Branch Details'}
-              </h2>
-              <button
-                onClick={() => {
-                  setShowViewModal(false);
-                  setSelectedCompany(null);
-                  setSelectedBranch(null);
-                }}
-                className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-              >
-                <FiX className="w-6 h-6" />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              {isCompany ? (
-                // Company Details
-                <>
-                  <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Company ID</p>
-                    <p className="font-medium text-gray-900 dark:text-white">{selectedCompany?.id}</p>
-                  </div>
-
-                  <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Company Name</p>
-                    <p className="font-medium text-gray-900 dark:text-white">{selectedCompany?.name}</p>
-                  </div>
-
-                  <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Description</p>
-                    <p className="font-medium text-gray-900 dark:text-white">
-                      {selectedCompany?.description || 'No description provided'}
-                    </p>
-                  </div>
-
-                  {/* Show associated branches */}
-                  <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Associated Branches</p>
-                    {branches.filter(b => b.company === selectedCompany?.id).length > 0 ? (
-                      <ul className="space-y-2">
-                        {branches.filter(b => b.company === selectedCompany?.id).map(branch => (
-                          <li key={branch.id} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                            <FiMapPin className="w-4 h-4 text-gray-400" />
-                            {branch.name} - {branch.location || 'No location'}
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="text-sm text-gray-500">No branches associated</p>
-                    )}
-                  </div>
-                </>
-              ) : (
-                // Branch Details
-                <>
-                  <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Branch ID</p>
-                    <p className="font-medium text-gray-900 dark:text-white">{selectedBranch?.id}</p>
-                  </div>
-
-                  <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Branch Name</p>
-                    <p className="font-medium text-gray-900 dark:text-white">{selectedBranch?.name}</p>
-                  </div>
-
-                  <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Location</p>
-                    <p className="font-medium text-gray-900 dark:text-white">
-                      {selectedBranch?.location || 'No location provided'}
-                    </p>
-                  </div>
-
-                  <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Company</p>
-                    <p className="font-medium text-gray-900 dark:text-white">
-                      {selectedBranch?.company_name || 'Unknown'}
-                    </p>
-                  </div>
-
-                  {/* Show company details */}
-                  <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Company Description</p>
-                    <p className="font-medium text-gray-900 dark:text-white">
-                      {companies.find(c => c.id === selectedBranch?.company)?.description || 'No description'}
-                    </p>
-                  </div>
-                </>
-              )}
-            </div>
-
-            <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <button
-                onClick={() => {
-                  setShowViewModal(false);
-                  setSelectedCompany(null);
-                  setSelectedBranch(null);
-                }}
-                className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-              >
-                Close
-              </button>
-              <button
-                onClick={() => {
-                  setShowViewModal(false);
-                  if (isCompany) {
-                    handleEditCompany(selectedCompany);
-                  } else {
-                    handleEditBranch(selectedBranch);
-                  }
-                }}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
-              >
-                <FiEdit2 className="w-4 h-4" />
-                Edit
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  // Delete Confirmation Modal
-  const DeleteModal = () => {
-    if (!showDeleteModal || !itemToDelete) return null;
-
-    const isCompany = deleteType === 'company';
-
-    return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-md w-full">
-          <div className="p-6">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center text-red-600">
-                <FiAlertCircle className="w-6 h-6" />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Delete {isCompany ? 'Company' : 'Branch'}</h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400">This action cannot be undone</p>
-              </div>
-            </div>
-
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
-              Are you sure you want to delete <span className="font-semibold">{itemToDelete.name}</span>?
-              {isCompany && ' All branches under this company will also be affected.'}
-            </p>
-
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => {
-                  setShowDeleteModal(false);
-                  setItemToDelete(null);
-                  setDeleteType(null);
-                }}
-                className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleConfirmDelete}
-                disabled={loading}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2 disabled:opacity-50"
-              >
-                {loading ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Deleting...
-                  </>
-                ) : (
-                  <>
-                    <FiTrash2 className="w-4 h-4" />
-                    Delete
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   return (
     <SystemAdminLayout>
@@ -869,7 +425,7 @@ const CompanyBranchManagement = () => {
               <FiCheckCircle className="w-5 h-5" />
               <span>{success}</span>
             </div>
-            <button onClick={() => setSuccess(null)} className="text-green-700">
+            <button onClick={() => setSuccess(null)} type="button" className="text-green-700">
               <FiX className="w-4 h-4" />
             </button>
           </div>
@@ -881,7 +437,7 @@ const CompanyBranchManagement = () => {
               <FiAlertCircle className="w-5 h-5" />
               <span>{error}</span>
             </div>
-            <button onClick={() => setError(null)} className="text-red-700">
+            <button onClick={() => setError(null)} type="button" className="text-red-700">
               <FiX className="w-4 h-4" />
             </button>
           </div>
@@ -920,6 +476,7 @@ const CompanyBranchManagement = () => {
             <div className="flex">
               <button
                 onClick={() => handleTabChange('companies')}
+                type="button"
                 className={`flex items-center gap-2 px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
                   activeTab === 'companies'
                     ? 'border-red-500 text-red-600 dark:text-red-400'
@@ -931,6 +488,7 @@ const CompanyBranchManagement = () => {
               </button>
               <button
                 onClick={() => handleTabChange('branches')}
+                type="button"
                 className={`flex items-center gap-2 px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
                   activeTab === 'branches'
                     ? 'border-red-500 text-red-600 dark:text-red-400'
@@ -962,6 +520,7 @@ const CompanyBranchManagement = () => {
               <div className="flex gap-2">
                 <button
                   onClick={() => setShowFilters(!showFilters)}
+                  type="button"
                   className={`p-2 rounded-lg border ${
                     showFilters 
                       ? 'bg-red-50 border-red-300 text-red-600 dark:bg-red-900/20 dark:border-red-700' 
@@ -972,6 +531,7 @@ const CompanyBranchManagement = () => {
                 </button>
                 <button
                   onClick={activeTab === 'companies' ? fetchCompanies : fetchBranches}
+                  type="button"
                   className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-500 hover:text-red-600"
                 >
                   <FiRefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
@@ -986,6 +546,7 @@ const CompanyBranchManagement = () => {
                       setShowBranchModal(true);
                     }
                   }}
+                  type="button"
                   className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
                 >
                   <FiPlus className="w-4 h-4" />
@@ -1049,6 +610,7 @@ const CompanyBranchManagement = () => {
                                 <div className="flex items-center gap-2">
                                   <button
                                     onClick={() => handleViewCompany(company)}
+                                    type="button"
                                     className="p-1 text-blue-600 hover:text-blue-700"
                                     title="View Details"
                                   >
@@ -1056,6 +618,7 @@ const CompanyBranchManagement = () => {
                                   </button>
                                   <button
                                     onClick={() => handleEditCompany(company)}
+                                    type="button"
                                     className="p-1 text-green-600 hover:text-green-700"
                                     title="Edit"
                                   >
@@ -1063,6 +626,7 @@ const CompanyBranchManagement = () => {
                                   </button>
                                   <button
                                     onClick={() => handleDeleteClick('company', company)}
+                                    type="button"
                                     className="p-1 text-red-600 hover:text-red-700"
                                     title="Delete"
                                   >
@@ -1090,8 +654,9 @@ const CompanyBranchManagement = () => {
                         </p>
                         <div className="flex gap-2">
                           <button
-                            onClick={() => setCompanyPagination({...companyPagination, page: companyPagination.page - 1})}
+                            onClick={() => setCompanyPagination(prev => ({...prev, page: prev.page - 1}))}
                             disabled={companyPagination.page === 1}
+                            type="button"
                             className="p-2 rounded border border-gray-300 dark:border-gray-600 disabled:opacity-50"
                           >
                             <FiChevronLeft className="w-4 h-4" />
@@ -1100,8 +665,9 @@ const CompanyBranchManagement = () => {
                             {companyPagination.page} / {companyPagination.totalPages}
                           </span>
                           <button
-                            onClick={() => setCompanyPagination({...companyPagination, page: companyPagination.page + 1})}
+                            onClick={() => setCompanyPagination(prev => ({...prev, page: prev.page + 1}))}
                             disabled={companyPagination.page === companyPagination.totalPages}
+                            type="button"
                             className="p-2 rounded border border-gray-300 dark:border-gray-600 disabled:opacity-50"
                           >
                             <FiChevronRight className="w-4 h-4" />
@@ -1150,6 +716,7 @@ const CompanyBranchManagement = () => {
                                 <div className="flex items-center gap-2">
                                   <button
                                     onClick={() => handleViewBranch(branch)}
+                                    type="button"
                                     className="p-1 text-blue-600 hover:text-blue-700"
                                     title="View Details"
                                   >
@@ -1157,6 +724,7 @@ const CompanyBranchManagement = () => {
                                   </button>
                                   <button
                                     onClick={() => handleEditBranch(branch)}
+                                    type="button"
                                     className="p-1 text-green-600 hover:text-green-700"
                                     title="Edit"
                                   >
@@ -1164,6 +732,7 @@ const CompanyBranchManagement = () => {
                                   </button>
                                   <button
                                     onClick={() => handleDeleteClick('branch', branch)}
+                                    type="button"
                                     className="p-1 text-red-600 hover:text-red-700"
                                     title="Delete"
                                   >
@@ -1191,8 +760,9 @@ const CompanyBranchManagement = () => {
                         </p>
                         <div className="flex gap-2">
                           <button
-                            onClick={() => setBranchPagination({...branchPagination, page: branchPagination.page - 1})}
+                            onClick={() => setBranchPagination(prev => ({...prev, page: prev.page - 1}))}
                             disabled={branchPagination.page === 1}
+                            type="button"
                             className="p-2 rounded border border-gray-300 dark:border-gray-600 disabled:opacity-50"
                           >
                             <FiChevronLeft className="w-4 h-4" />
@@ -1201,8 +771,9 @@ const CompanyBranchManagement = () => {
                             {branchPagination.page} / {branchPagination.totalPages}
                           </span>
                           <button
-                            onClick={() => setBranchPagination({...branchPagination, page: branchPagination.page + 1})}
+                            onClick={() => setBranchPagination(prev => ({...prev, page: prev.page + 1}))}
                             disabled={branchPagination.page === branchPagination.totalPages}
+                            type="button"
                             className="p-2 rounded border border-gray-300 dark:border-gray-600 disabled:opacity-50"
                           >
                             <FiChevronRight className="w-4 h-4" />
@@ -1218,12 +789,516 @@ const CompanyBranchManagement = () => {
         </div>
       </div>
 
-      {/* Modals */}
-      <CompanyModal />
-      <BranchModal />
-      <ViewModal />
-      <DeleteModal />
+      {/* Modals - Now passing props instead of defining inside */}
+      <CompanyModal 
+        show={showCompanyModal}
+        onClose={() => {
+          setShowCompanyModal(false);
+          resetCompanyForm();
+        }}
+        mode={modalMode}
+        formData={companyFormData}
+        setFormData={setCompanyFormData}
+        selectedCompany={selectedCompany}
+        loading={loading}
+        onSubmit={modalMode === 'add' ? handleCreateCompany : handleUpdateCompany}
+        onEdit={() => {
+          setShowCompanyModal(false);
+          handleEditCompany(selectedCompany);
+        }}
+        companies={companies}
+      />
+
+      <BranchModal
+        show={showBranchModal}
+        onClose={() => {
+          setShowBranchModal(false);
+          resetBranchForm();
+        }}
+        mode={modalMode}
+        formData={branchFormData}
+        setFormData={setBranchFormData}
+        selectedBranch={selectedBranch}
+        loading={loading}
+        onSubmit={modalMode === 'add' ? handleCreateBranch : handleUpdateBranch}
+        onEdit={() => {
+          setShowBranchModal(false);
+          handleEditBranch(selectedBranch);
+        }}
+        companies={companies}
+      />
+
+      <ViewModal
+        show={showViewModal}
+        onClose={() => {
+          setShowViewModal(false);
+          setSelectedCompany(null);
+          setSelectedBranch(null);
+        }}
+        selectedCompany={selectedCompany}
+        selectedBranch={selectedBranch}
+        branches={branches}
+        companies={companies}
+        onEdit={() => {
+          setShowViewModal(false);
+          if (selectedCompany) {
+            handleEditCompany(selectedCompany);
+          } else {
+            handleEditBranch(selectedBranch);
+          }
+        }}
+      />
+
+      <DeleteModal
+        show={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setItemToDelete(null);
+          setDeleteType(null);
+        }}
+        itemToDelete={itemToDelete}
+        deleteType={deleteType}
+        loading={loading}
+        onConfirm={handleConfirmDelete}
+      />
     </SystemAdminLayout>
+  );
+};
+
+// Company Modal Component - Moved outside main component
+const CompanyModal = ({ show, onClose, mode, formData, setFormData, selectedCompany, loading, onSubmit, onEdit, companies }) => {
+  if (!show) return null;
+
+  const isViewMode = mode === 'view';
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-md w-full">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+              {mode === 'add' ? 'Add New Company' : 
+               mode === 'edit' ? 'Edit Company' : 'Company Details'}
+            </h2>
+            <button
+              onClick={onClose}
+              type="button"
+              className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              <FiX className="w-6 h-6" />
+            </button>
+          </div>
+
+          <form onSubmit={onSubmit}>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Company Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.name}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  disabled={isViewMode}
+                  placeholder="Enter company name"
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
+                           bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                           focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent
+                           disabled:bg-gray-100 disabled:cursor-not-allowed"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Description
+                </label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({...formData, description: e.target.value})}
+                  disabled={isViewMode}
+                  placeholder="Enter company description"
+                  rows="4"
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
+                           bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                           focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent
+                           disabled:bg-gray-100 disabled:cursor-not-allowed resize-none"
+                />
+              </div>
+            </div>
+
+            {!isViewMode && (
+              <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2 disabled:opacity-50"
+                >
+                  {loading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      {mode === 'add' ? 'Creating...' : 'Updating...'}
+                    </>
+                  ) : (
+                    <>
+                      <FiSave className="w-4 h-4" />
+                      {mode === 'add' ? 'Create Company' : 'Update Company'}
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+
+            {isViewMode && (
+              <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  onClick={onEdit}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
+                >
+                  <FiEdit2 className="w-4 h-4" />
+                  Edit
+                </button>
+              </div>
+            )}
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Branch Modal Component - Moved outside main component
+const BranchModal = ({ show, onClose, mode, formData, setFormData, selectedBranch, loading, onSubmit, onEdit, companies }) => {
+  if (!show) return null;
+
+  const isViewMode = mode === 'view';
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-md w-full">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+              {mode === 'add' ? 'Add New Branch' : 
+               mode === 'edit' ? 'Edit Branch' : 'Branch Details'}
+            </h2>
+            <button
+              onClick={onClose}
+              type="button"
+              className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              <FiX className="w-6 h-6" />
+            </button>
+          </div>
+
+          <form onSubmit={onSubmit}>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Branch Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.name}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  disabled={isViewMode}
+                  placeholder="Enter branch name"
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
+                           bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                           focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent
+                           disabled:bg-gray-100 disabled:cursor-not-allowed"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Location
+                </label>
+                <input
+                  type="text"
+                  value={formData.location}
+                  onChange={(e) => setFormData({...formData, location: e.target.value})}
+                  disabled={isViewMode}
+                  placeholder="Enter branch location"
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
+                           bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                           focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent
+                           disabled:bg-gray-100 disabled:cursor-not-allowed"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Company *
+                </label>
+                <select
+                  required
+                  value={formData.company}
+                  onChange={(e) => setFormData({...formData, company: e.target.value})}
+                  disabled={isViewMode}
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
+                           bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                           focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent
+                           disabled:bg-gray-100 disabled:cursor-not-allowed"
+                >
+                  <option value="">Select a company</option>
+                  {companies.map(company => (
+                    <option key={company.id} value={company.id}>
+                      {company.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {!isViewMode && (
+              <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2 disabled:opacity-50"
+                >
+                  {loading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      {mode === 'add' ? 'Creating...' : 'Updating...'}
+                    </>
+                  ) : (
+                    <>
+                      <FiSave className="w-4 h-4" />
+                      {mode === 'add' ? 'Create Branch' : 'Update Branch'}
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+
+            {isViewMode && (
+              <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  onClick={onEdit}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
+                >
+                  <FiEdit2 className="w-4 h-4" />
+                  Edit
+                </button>
+              </div>
+            )}
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// View Modal Component - Moved outside main component
+const ViewModal = ({ show, onClose, selectedCompany, selectedBranch, branches, companies, onEdit }) => {
+  if (!show || (!selectedCompany && !selectedBranch)) return null;
+
+  const isCompany = !!selectedCompany;
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-2xl w-full">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+              {isCompany ? 'Company Details' : 'Branch Details'}
+            </h2>
+            <button
+              onClick={onClose}
+              type="button"
+              className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              <FiX className="w-6 h-6" />
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            {isCompany ? (
+              // Company Details
+              <>
+                <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Company ID</p>
+                  <p className="font-medium text-gray-900 dark:text-white">{selectedCompany?.id}</p>
+                </div>
+
+                <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Company Name</p>
+                  <p className="font-medium text-gray-900 dark:text-white">{selectedCompany?.name}</p>
+                </div>
+
+                <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Description</p>
+                  <p className="font-medium text-gray-900 dark:text-white">
+                    {selectedCompany?.description || 'No description provided'}
+                  </p>
+                </div>
+
+                {/* Show associated branches */}
+                <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Associated Branches</p>
+                  {branches.filter(b => b.company === selectedCompany?.id).length > 0 ? (
+                    <ul className="space-y-2">
+                      {branches.filter(b => b.company === selectedCompany?.id).map(branch => (
+                        <li key={branch.id} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                          <FiMapPin className="w-4 h-4 text-gray-400" />
+                          {branch.name} - {branch.location || 'No location'}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-sm text-gray-500">No branches associated</p>
+                  )}
+                </div>
+              </>
+            ) : (
+              // Branch Details
+              <>
+                <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Branch ID</p>
+                  <p className="font-medium text-gray-900 dark:text-white">{selectedBranch?.id}</p>
+                </div>
+
+                <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Branch Name</p>
+                  <p className="font-medium text-gray-900 dark:text-white">{selectedBranch?.name}</p>
+                </div>
+
+                <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Location</p>
+                  <p className="font-medium text-gray-900 dark:text-white">
+                    {selectedBranch?.location || 'No location provided'}
+                  </p>
+                </div>
+
+                <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Company</p>
+                  <p className="font-medium text-gray-900 dark:text-white">
+                    {selectedBranch?.company_name || 'Unknown'}
+                  </p>
+                </div>
+
+                {/* Show company details */}
+                <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Company Description</p>
+                  <p className="font-medium text-gray-900 dark:text-white">
+                    {companies.find(c => c.id === selectedBranch?.company)?.description || 'No description'}
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+
+          <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <button
+              onClick={onClose}
+              type="button"
+              className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+            >
+              Close
+            </button>
+            <button
+              onClick={onEdit}
+              type="button"
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
+            >
+              <FiEdit2 className="w-4 h-4" />
+              Edit
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Delete Confirmation Modal - Moved outside main component
+const DeleteModal = ({ show, onClose, itemToDelete, deleteType, loading, onConfirm }) => {
+  if (!show || !itemToDelete) return null;
+
+  const isCompany = deleteType === 'company';
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-md w-full">
+        <div className="p-6">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center text-red-600">
+              <FiAlertCircle className="w-6 h-6" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Delete {isCompany ? 'Company' : 'Branch'}</h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400">This action cannot be undone</p>
+            </div>
+          </div>
+
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            Are you sure you want to delete <span className="font-semibold">{itemToDelete.name}</span>?
+            {isCompany && ' All branches under this company will also be affected.'}
+          </p>
+
+          <div className="flex justify-end gap-3">
+            <button
+              onClick={onClose}
+              type="button"
+              className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={onConfirm}
+              disabled={loading}
+              type="button"
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2 disabled:opacity-50"
+            >
+              {loading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <FiTrash2 className="w-4 h-4" />
+                  Delete
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 

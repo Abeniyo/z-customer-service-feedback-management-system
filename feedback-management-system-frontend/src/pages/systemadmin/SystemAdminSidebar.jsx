@@ -37,10 +37,7 @@ const SystemAdminSidebar = () => {
     
     { path: '/systemadmin/company', label: 'Company Management', icon: FiUserCheck },
     { path: '/systemadmin/users', label: 'User Management', icon: FiUsers },
-    { path: '/systemadmin/roles', label: 'Role Management', icon: FiShield },
-    { path: '/systemadmin/permissions', label: 'Permissions', icon: FiLock },
-    { path: '/systemadmin/audit-logs', label: 'Audit Logs', icon: FiFileText },
-    { path: '/systemadmin/activity', label: 'System Activity', icon: FiActivity },
+
     { path: '/systemadmin/backup', label: 'Backup & Restore', icon: FiDatabase },
     { path: '/systemadmin/system-health', label: 'System Health', icon: FiServer },
   ];

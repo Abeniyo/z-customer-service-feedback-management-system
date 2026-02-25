@@ -175,85 +175,7 @@ const SystemAdminDashboard = () => {
       <SystemAdminSidebar />
       
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
-        {/* Header */}
-        <header className="flex-shrink-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-30">
-          <div className="px-4 sm:px-6 lg:px-8 py-4">
-            <div className="flex items-center justify-between">
-              <h1 className="text-xl font-semibold text-gray-900 dark:text-white ml-14 lg:ml-0">
-                System Administration Dashboard
-              </h1>
-
-              <div className="flex items-center gap-3">
-                {/* Time Range Selector */}
-                <select
-                  value={timeRange}
-                  onChange={(e) => setTimeRange(e.target.value)}
-                  className="hidden md:block px-3 py-2 bg-gray-100 dark:bg-gray-700 border-0 rounded-lg text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="24h">Last 24 Hours</option>
-                  <option value="7d">Last 7 Days</option>
-                  <option value="30d">Last 30 Days</option>
-                </select>
-
-                {/* Search Bar */}
-                <div className="hidden md:flex items-center bg-gray-100 dark:bg-gray-700 rounded-lg px-3 py-2">
-                  <FiSearch className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search..."
-                    className="ml-2 bg-transparent border-none focus:outline-none text-sm text-gray-700 dark:text-gray-300 placeholder-gray-500 dark:placeholder-gray-400 w-48"
-                  />
-                </div>
-
-                {/* Refresh Button */}
-                <button className="p-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <FiRefreshCw className="w-5 h-5" />
-                </button>
-
-                {/* Notification Bell */}
-                <button className="p-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 relative">
-                  <FiBell className="w-5 h-5" />
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-                </button>
-
-                {/* Theme Toggle */}
-                <button
-                  onClick={toggleTheme}
-                  className="p-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-                >
-                  {isDark ? <FiSun className="w-5 h-5" /> : <FiMoon className="w-5 h-5" />}
-                </button>
-
-                {/* Profile Menu */}
-                <div className="relative">
-                  <button
-                    onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-                    className="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-                  >
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold text-sm">
-                      {user?.name?.charAt(0) || 'A'}
-                    </div>
-                  </button>
-
-                  {profileMenuOpen && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 py-2 z-50">
-                      <Link to="/systemadmin/profile" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20">
-                        Your Profile
-                      </Link>
-                      <Link to="/systemadmin/settings" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20">
-                        Settings
-                      </Link>
-                      <hr className="my-2 border-gray-200 dark:border-gray-700" />
-                      <button className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20">
-                        Logout
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </header>
+ 
 
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
@@ -262,7 +184,7 @@ const SystemAdminDashboard = () => {
             <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-6 text-white">
               <div className="flex justify-between items-start">
                 <div>
-                  <h1 className="text-2xl font-bold mb-2">Welcome back, {user?.name || 'Administrator'}! 🔧</h1>
+                  <h1 className="text-2xl font-bold mb-2">Welcome back, {user?.name || 'Administrator'}! </h1>
                   <p className="text-blue-100">System is running smoothly. 3 pending tasks require attention.</p>
                 </div>
                 <div className="bg-white/20 rounded-lg px-4 py-2">
