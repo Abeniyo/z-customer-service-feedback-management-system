@@ -1,8 +1,8 @@
-# backup_manager/models.py
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.exceptions import ValidationError
 import uuid
 import os
 
@@ -54,7 +54,8 @@ class BackupSchedule(models.Model):
     
     # Schedule timing
     scheduled_time = models.TimeField(null=True, blank=True, help_text="For daily/weekly schedules")
-    scheduled_day = models.PositiveSmallIntegerField(null=True, blank=True, help_text="Day of week (0-6) or month (1-31)")
+    scheduled_day = models.PositiveSmallIntegerField(null=True, blank=True, 
+                                                     help_text="Day of week (0-6 for weekly) or day of month (1-31 for monthly)")
     
     # Retention policy
     retention_days = models.PositiveIntegerField(default=30, validators=[MinValueValidator(1)])
@@ -99,19 +100,28 @@ class BackupSchedule(models.Model):
     def __str__(self):
         return f"{self.name} ({self.get_backup_type_display()})"
     
+    def clean(self):
+        """Validate schedule configuration"""
+        if self.frequency == 'weekly' and self.scheduled_day is None:
+            raise ValidationError({'scheduled_day': 'Day of week is required for weekly schedule'})
+        if self.frequency == 'monthly' and self.scheduled_day is None:
+            raise ValidationError({'scheduled_day': 'Day of month is required for monthly schedule'})
+        if self.frequency == 'daily' and self.scheduled_time is None:
+            raise ValidationError({'scheduled_time': 'Time is required for daily schedule'})
+    
     @property
     def success_rate(self):
         if self.total_runs == 0:
             return 0
-        return (self.successful_runs / self.total_runs) * 100
+        return round((self.successful_runs / self.total_runs) * 100, 2)
     
     @property
     def average_size(self):
         backups = self.backups.all()[:10]
         if not backups:
             return 0
-        total = sum(b.size_bytes for b in backups if b.size_bytes)
-        return total / len(backups)
+        total = sum(b.size_bytes or 0 for b in backups if b.size_bytes)
+        return total / len(backups) if len(backups) > 0 else 0
 
 
 class DatabaseBackup(models.Model):
@@ -137,7 +147,7 @@ class DatabaseBackup(models.Model):
     # File details
     filename = models.CharField(max_length=500)
     file_path = models.CharField(max_length=1000)
-    file_size = models.CharField(max_length=50, help_text="Human readable size")
+    file_size = models.CharField(max_length=50, help_text="Human readable size", blank=True)
     size_bytes = models.BigIntegerField(null=True, blank=True)
     checksum = models.CharField(max_length=128, blank=True)
     checksum_type = models.CharField(max_length=20, default='sha256')
@@ -164,6 +174,12 @@ class DatabaseBackup(models.Model):
             else:
                 return f"{seconds/3600:.1f} hours"
         return None
+    
+    @property
+    def duration_seconds(self):
+        if self.started_at and self.completed_at:
+            return (self.completed_at - self.started_at).total_seconds()
+        return 0
     
     # Status
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
@@ -203,7 +219,7 @@ class DatabaseBackup(models.Model):
         ]
     
     def __str__(self):
-        return f"{self.name} ({self.created_at})"
+        return f"{self.name} ({self.created_at.strftime('%Y-%m-%d %H:%M')})"
     
     def save(self, *args, **kwargs):
         if not self.expires_at and self.schedule:
@@ -232,11 +248,14 @@ class BackupLog(models.Model):
     details = models.JSONField(default=dict, blank=True)
     
     class Meta:
-        ordering = ['timestamp']
+        ordering = ['-timestamp']
         indexes = [
             models.Index(fields=['backup', 'timestamp']),
             models.Index(fields=['level']),
         ]
+    
+    def __str__(self):
+        return f"{self.get_level_display()}: {self.message[:50]}"
 
 
 class BackupStatistics(models.Model):
@@ -331,11 +350,20 @@ class BackupDestination(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
+    class Meta:
+        ordering = ['-is_default', 'priority']
+    
     def __str__(self):
         return f"{self.name} ({self.get_type_display()})"
     
     @property
     def usage_percentage(self):
         if self.total_space_gb and self.total_space_gb > 0:
-            return (self.used_space_gb / self.total_space_gb) * 100
+            return round((self.used_space_gb / self.total_space_gb) * 100, 1)
         return 0
+    
+    @property
+    def free_space_gb_calculated(self):
+        if self.total_space_gb and self.used_space_gb:
+            return self.total_space_gb - self.used_space_gb
+        return self.free_space_gb

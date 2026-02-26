@@ -275,10 +275,10 @@ BACKUP_ROOT = os.path.join(BASE_DIR, 'backups')
 os.makedirs(BACKUP_ROOT, exist_ok=True)
 
 # AWS Settings (if using S3)
-AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID', '')
-AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY', '')
-AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME', '')
-AWS_S3_REGION_NAME = os.environ.get('AWS_S3_REGION_NAME', 'us-east-1')
+# AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID', '')
+# AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY', '')
+# AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME', '')
+# AWS_S3_REGION_NAME = os.environ.get('AWS_S3_REGION_NAME', 'us-east-1')
 
 # Celery settings (optional, for async backups)
 CELERY_BEAT_SCHEDULE = {
@@ -291,3 +291,31 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': crontab(hour=2, minute=0),  # Daily at 02:00
     },
 }
+
+
+
+# Backup settings
+# BACKUP_ROOT = os.path.join(BASE_DIR, 'backups')
+# os.makedirs(BACKUP_ROOT, exist_ok=True)
+
+# AWS Settings (if using S3)
+AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID', '')
+AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY', '')
+AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME', '')
+AWS_S3_REGION_NAME = os.environ.get('AWS_S3_REGION_NAME', 'us-east-1')
+
+# Admin email for notifications
+ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'admin@gebeta.com')
+
+# Celery settings (optional)
+# if USE_CELERY:
+#     CELERY_BEAT_SCHEDULE = {
+#         'update-backup-stats': {
+#             'task': 'backup_manager.tasks.update_statistics_task',
+#             'schedule': crontab(hour=0, minute=5),  # Daily at 00:05
+#         },
+#         'cleanup-old-backups': {
+#             'task': 'backup_manager.tasks.cleanup_backups_task',
+#             'schedule': crontab(hour=2, minute=0),  # Daily at 02:00
+#         },
+#     }

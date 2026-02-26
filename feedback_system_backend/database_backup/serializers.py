@@ -1,4 +1,3 @@
-# backup_manager/serializers.py
 from rest_framework import serializers
 from datetime import timedelta
 from .models import (
@@ -14,6 +13,9 @@ class BackupScheduleSerializer(serializers.ModelSerializer):
     last_run_humanized = serializers.SerializerMethodField()
     next_run_humanized = serializers.SerializerMethodField()
     created_by_name = serializers.CharField(source='created_by.get_full_name', read_only=True)
+    backup_type_display = serializers.CharField(source='get_backup_type_display', read_only=True)
+    frequency_display = serializers.CharField(source='get_frequency_display', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
     
     class Meta:
         model = BackupSchedule
@@ -22,7 +24,7 @@ class BackupScheduleSerializer(serializers.ModelSerializer):
                            'successful_runs', 'failed_runs', 'is_running']
     
     def get_average_size(self, obj):
-        if obj.average_size:
+        if obj.average_size and obj.average_size > 0:
             return humanize.naturalsize(obj.average_size)
         return "N/A"
     
@@ -33,17 +35,21 @@ class BackupScheduleSerializer(serializers.ModelSerializer):
     
     def get_next_run_humanized(self, obj):
         if obj.next_run:
+            if obj.next_run < timezone.now():
+                return "Overdue"
             return humanize.naturaltime(obj.next_run - timezone.now())
         return "Not scheduled"
 
 
 class DatabaseBackupSerializer(serializers.ModelSerializer):
-    schedule_name = serializers.CharField(source='schedule.name', read_only=True)
+    schedule_name = serializers.CharField(source='schedule.name', read_only=True, default="Manual")
     duration_humanized = serializers.SerializerMethodField()
     size_humanized = serializers.SerializerMethodField()
     created_humanized = serializers.SerializerMethodField()
     expires_humanized = serializers.SerializerMethodField()
-    created_by_name = serializers.CharField(source='created_by.get_full_name', read_only=True)
+    created_by_name = serializers.CharField(source='created_by.get_full_name', read_only=True, default="System")
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    backup_type_display = serializers.CharField(source='get_backup_type_display', read_only=True)
     
     class Meta:
         model = DatabaseBackup
@@ -51,12 +57,26 @@ class DatabaseBackupSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at', 'checksum', 'size_bytes']
     
     def get_duration_humanized(self, obj):
-        return humanize.naturaldelta(timedelta(seconds=obj.duration))
+        if obj.started_at and obj.completed_at:
+            duration = obj.completed_at - obj.started_at
+            total_seconds = duration.total_seconds()
+            
+            if total_seconds < 60:
+                return f"{int(total_seconds)} seconds"
+            elif total_seconds < 3600:
+                return f"{total_seconds/60:.1f} minutes"
+            elif total_seconds < 86400:
+                return f"{total_seconds/3600:.1f} hours"
+            else:
+                return f"{total_seconds/86400:.1f} days"
+        return "N/A"
     
     def get_size_humanized(self, obj):
-        if obj.size_bytes:
+        if obj.size_bytes and obj.size_bytes > 0:
             return humanize.naturalsize(obj.size_bytes)
-        return obj.file_size
+        elif obj.file_size:
+            return obj.file_size
+        return "Unknown"
     
     def get_created_humanized(self, obj):
         return humanize.naturaltime(timezone.now() - obj.created_at)
@@ -71,8 +91,9 @@ class DatabaseBackupSerializer(serializers.ModelSerializer):
 
 class BackupLogSerializer(serializers.ModelSerializer):
     backup_name = serializers.CharField(source='backup.name', read_only=True)
-    schedule_name = serializers.CharField(source='schedule.name', read_only=True)
+    schedule_name = serializers.CharField(source='schedule.name', read_only=True, default="N/A")
     time_humanized = serializers.SerializerMethodField()
+    level_display = serializers.CharField(source='get_level_display', read_only=True)
     
     class Meta:
         model = BackupLog
@@ -85,6 +106,7 @@ class BackupLogSerializer(serializers.ModelSerializer):
 class BackupStatisticsSerializer(serializers.ModelSerializer):
     success_rate = serializers.SerializerMethodField()
     total_size_tb = serializers.SerializerMethodField()
+    date_formatted = serializers.SerializerMethodField()
     
     class Meta:
         model = BackupStatistics
@@ -92,31 +114,42 @@ class BackupStatisticsSerializer(serializers.ModelSerializer):
     
     def get_success_rate(self, obj):
         if obj.total_backups > 0:
-            return (obj.successful_backups / obj.total_backups) * 100
+            return round((obj.successful_backups / obj.total_backups) * 100, 1)
         return 0
     
     def get_total_size_tb(self, obj):
-        return obj.total_size_gb / 1024 if obj.total_size_gb else 0
+        return round(obj.total_size_gb / 1024, 2) if obj.total_size_gb else 0
+    
+    def get_date_formatted(self, obj):
+        return obj.date.strftime("%Y-%m-%d")
 
 
 class BackupDestinationSerializer(serializers.ModelSerializer):
-    usage_percentage = serializers.FloatField(read_only=True)
+    usage_percentage = serializers.SerializerMethodField()
     free_space_humanized = serializers.SerializerMethodField()
     used_space_humanized = serializers.SerializerMethodField()
     total_space_humanized = serializers.SerializerMethodField()
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    type_display = serializers.CharField(source='get_type_display', read_only=True)
     
     class Meta:
         model = BackupDestination
         fields = '__all__'
         read_only_fields = ['id', 'created_at', 'updated_at', 'last_checked']
     
+    def get_usage_percentage(self, obj):
+        if obj.total_space_gb and obj.total_space_gb > 0:
+            return round((obj.used_space_gb / obj.total_space_gb) * 100, 1)
+        return 0
+    
     def get_free_space_humanized(self, obj):
-        if obj.free_space_gb:
-            return f"{obj.free_space_gb:.1f} GB"
+        free = obj.free_space_gb_calculated
+        if free is not None:
+            return f"{free:.1f} GB"
         return "Unknown"
     
     def get_used_space_humanized(self, obj):
-        return f"{obj.used_space_gb:.1f} GB"
+        return f"{obj.used_space_gb:.1f} GB" if obj.used_space_gb else "0 GB"
     
     def get_total_space_humanized(self, obj):
         if obj.total_space_gb:
@@ -128,7 +161,7 @@ class DashboardStatsSerializer(serializers.Serializer):
     """Serializer for dashboard overview"""
     total_backups = serializers.IntegerField()
     total_size_gb = serializers.FloatField()
-    last_backup = serializers.DictField()
+    last_backup = serializers.DictField(allow_null=True)
     success_rate = serializers.FloatField()
     
     storage_used_gb = serializers.FloatField()
@@ -145,10 +178,13 @@ class DashboardStatsSerializer(serializers.Serializer):
 
 class CreateBackupSerializer(serializers.Serializer):
     """Serializer for creating a new backup"""
-    schedule_id = serializers.UUIDField(required=False)
+    schedule_id = serializers.UUIDField(required=False, allow_null=True)
     backup_type = serializers.ChoiceField(choices=BackupSchedule.BACKUP_TYPES, default='full')
-    description = serializers.CharField(required=False, allow_blank=True)
-    destination = serializers.ChoiceField(choices=BackupSchedule.DESTINATION_TYPES, default='local')
+    description = serializers.CharField(required=False, allow_blank=True, default="")
+    destination = serializers.ChoiceField(
+        choices=[('local', 'Local'), ('s3', 'AWS S3'), ('both', 'Local + Cloud'), ('cold', 'Cold Storage')], 
+        default='local'
+    )
     compression = serializers.BooleanField(default=True)
     encryption = serializers.BooleanField(default=True)
     verify = serializers.BooleanField(default=True)
@@ -157,7 +193,7 @@ class CreateBackupSerializer(serializers.Serializer):
 class RestoreBackupSerializer(serializers.Serializer):
     """Serializer for restoring a backup"""
     backup_id = serializers.UUIDField()
-    target_database = serializers.CharField(default='default')
-    overwrite = serializers.BooleanField(default=False)
-    verify_before_restore = serializers.BooleanField(default=True)
-    create_backup_before = serializers.BooleanField(default=True)
+    target_database = serializers.CharField(default='default', required=False)
+    overwrite = serializers.BooleanField(default=False, required=False)
+    verify_before_restore = serializers.BooleanField(default=True, required=False)
+    create_backup_before = serializers.BooleanField(default=True, required=False)
