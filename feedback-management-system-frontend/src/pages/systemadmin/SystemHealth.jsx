@@ -29,7 +29,6 @@ import {
   FiChevronDown,
   FiChevronUp,
   FiInfo,
-  
   FiZap,
   FiGlobe,
   FiKey,
@@ -48,282 +47,338 @@ const SystemHealth = () => {
   const [success, setSuccess] = useState(null);
   const [error, setError] = useState(null);
 
-  // System Health Stats
-  const systemStats = {
-    cpu: {
-      usage: 42,
-      cores: 8,
-      temperature: 52,
-      loadAverage: [2.5, 3.1, 2.8],
-      status: 'healthy'
-    },
-    memory: {
-      total: 32,
-      used: 18.5,
-      free: 13.5,
-      percentage: 58,
-      status: 'healthy'
-    },
-    disk: {
-      total: 500,
-      used: 312,
-      free: 188,
-      percentage: 62,
-      status: 'warning',
-      warning: 'Disk usage above 60%'
-    },
-    network: {
-      incoming: 245,
-      outgoing: 189,
-      connections: 1245,
-      latency: 23,
-      status: 'healthy'
-    },
-    database: {
-      connections: 42,
-      activeQueries: 12,
-      slowQueries: 3,
-      replicationLag: 0.5,
-      status: 'healthy'
+  // State for dynamic data
+  const [systemStats, setSystemStats] = useState({
+    cpu: { usage: 0, cores: 0, temperature: null, loadAverage: [0, 0, 0], status: 'healthy' },
+    memory: { total: 0, used: 0, free: 0, percentage: 0, status: 'healthy' },
+    disk: { total: 0, used: 0, free: 0, percentage: 0, status: 'healthy', warning: null },
+    network: { incoming: 0, outgoing: 0, connections: 0, latency: 0, status: 'healthy' },
+    database: { connections: 0, activeQueries: 0, slowQueries: 0, replicationLag: 0, status: 'healthy' },
+    security: { active: 0, brute_force: 0, rate_limited: 0, blocked_ips: 0, critical: 0 }
+  });
+
+  const [securityEvents, setSecurityEvents] = useState([]);
+  const [systemErrors, setSystemErrors] = useState([]);
+  const [rateLimitStats, setRateLimitStats] = useState({
+    total: 0,
+    blocked: 0,
+    limited: 0,
+    current: 0,
+    topEndpoints: [],
+    topIPs: []
+  });
+  
+  const [bruteForceStats, setBruteForceStats] = useState({
+    total: 0,
+    blocked: 0,
+    monitored: 0,
+    averageAttempts: 0,
+    topTargets: [],
+    byCountry: []
+  });
+
+  const [axesAttempts, setAxesAttempts] = useState([]);
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [honeypotLogs, setHoneypotLogs] = useState([]);
+
+  // Base API URL - Update this to match your Django server
+  const API_BASE_URL = 'http://127.0.0.1:8000/api/v1';
+
+  // Helper function to handle API responses
+  const handleResponse = async (response) => {
+    const contentType = response.headers.get('content-type');
+    
+    // Check if response is JSON
+    if (contentType && contentType.includes('application/json')) {
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.detail || data.message || `API request failed with status ${response.status}`);
+      }
+      return data;
+    } else {
+      // If not JSON, get the text for debugging
+      const text = await response.text();
+      if (text.includes('<!doctype html>')) {
+        console.error('Received HTML instead of JSON. Endpoint:', response.url);
+        throw new Error(`API endpoint not found: ${response.url}. Check if the server is running and the URL is correct.`);
+      }
+      throw new Error(`Unexpected response type: ${contentType}`);
     }
   };
 
-  // Security Events (Brute Force Attempts, Rate Limiting)
-  const securityEvents = [
-    {
-      id: 1,
-      type: 'brute_force',
-      severity: 'critical',
-      timestamp: '2026-02-26 14:23:15',
-      source: '203.45.67.89',
-      target: 'admin@system.com',
-      attempts: 15,
-      endpoint: '/api/login/',
-      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-      status: 'blocked',
-      action: 'IP Blocked',
-      details: 'Multiple failed login attempts detected - 15 attempts in 2 minutes',
-      country: 'RU',
-      isp: 'Unknown ISP',
-      rateLimit: true
-    },
-    {
-      id: 2,
-      type: 'rate_limit',
-      severity: 'high',
-      timestamp: '2026-02-26 13:45:22',
-      source: '156.67.218.154',
-      target: '/api/data/',
-      attempts: 245,
-      endpoint: '/api/data/',
-      userAgent: 'Python/3.9 aiohttp',
-      status: 'limited',
-      action: 'Rate Limited',
-      details: 'Exceeded rate limit: 245 requests in 1 minute (limit: 100/min)',
-      country: 'NL',
-      isp: 'DigitalOcean',
-      rateLimit: true
-    },
-    {
-      id: 3,
-      type: 'brute_force',
-      severity: 'high',
-      timestamp: '2026-02-26 12:15:08',
-      source: '45.227.253.84',
-      target: 'root@system.com',
-      attempts: 8,
-      endpoint: '/api/admin/login/',
-      userAgent: 'Mozilla/5.0 (compatible; Nmap Scripting Engine)',
-      status: 'blocked',
-      action: 'IP Blocked',
-      details: 'Suspicious admin login attempts detected',
-      country: 'CN',
-      isp: 'Unknown ISP',
-      rateLimit: false
-    },
-    {
-      id: 4,
-      type: 'rate_limit',
-      severity: 'medium',
-      timestamp: '2026-02-26 11:30:45',
-      source: '192.168.1.105',
-      target: '/api/search/',
-      attempts: 78,
-      endpoint: '/api/search/',
-      userAgent: 'Mozilla/5.0 (compatible; Googlebot/2.1)',
-      status: 'monitoring',
-      action: 'Monitoring',
-      details: 'High request rate from legitimate crawler - under monitoring',
-      country: 'US',
-      isp: 'Google Cloud',
-      rateLimit: true
-    },
-    {
-      id: 5,
-      type: 'brute_force',
-      severity: 'critical',
-      timestamp: '2026-02-26 10:05:33',
-      source: '103.152.36.78',
-      target: 'multiple',
-      attempts: 342,
-      endpoint: '/api/login/',
-      userAgent: 'Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)',
-      status: 'blocked',
-      action: 'IP Blocked - Permanent',
-      details: 'Distributed brute force attack detected across multiple accounts',
-      country: 'VN',
-      isp: 'Viettel',
-      rateLimit: true
-    },
-    {
-      id: 6,
-      type: 'rate_limit',
-      severity: 'critical',
-      timestamp: '2026-02-26 09:20:19',
-      source: '185.191.171.45',
-      target: '/api/auth/',
-      attempts: 567,
-      endpoint: '/api/auth/',
-      userAgent: 'Go-http-client/1.1',
-      status: 'blocked',
-      action: 'IP Blocked',
-      details: 'DDoS attempt - 567 requests per minute targeting auth endpoint',
-      country: 'UA',
-      isp: 'Hostinger',
-      rateLimit: true
+  // Fetch dashboard overview data
+  const fetchDashboardData = async () => {
+    try {
+      const url = `${API_BASE_URL}/system-health/dashboard/?range=${timeRange}`;
+      console.log('Fetching dashboard data from:', url);
+      
+      const response = await fetch(url);
+      const data = await handleResponse(response);
+      
+      setSystemStats(data);
+      return data;
+    } catch (err) {
+      console.error('Error fetching dashboard data:', err);
+      throw err;
     }
-  ];
-
-  // System Errors
-  const systemErrors = [
-    {
-      id: 1,
-      type: 'database',
-      severity: 'high',
-      timestamp: '2026-02-26 14:15:23',
-      source: 'PostgreSQL',
-      message: 'Connection pool exhausted',
-      details: 'Maximum connections reached (100/100)',
-      status: 'resolved',
-      resolvedAt: '2026-02-26 14:18:45',
-      duration: '3m 22s'
-    },
-    {
-      id: 2,
-      type: 'api',
-      severity: 'medium',
-      timestamp: '2026-02-26 13:22:10',
-      source: 'Redis Cache',
-      message: 'Cache miss rate > 90%',
-      details: 'Cache efficiency dropping - 92% miss rate in last 5 minutes',
-      status: 'monitoring',
-      resolvedAt: null
-    },
-    {
-      id: 3,
-      type: 'network',
-      severity: 'low',
-      timestamp: '2026-02-26 12:05:47',
-      source: 'Load Balancer',
-      message: 'High latency detected',
-      details: 'Response time > 500ms for 2% of requests',
-      status: 'resolved',
-      resolvedAt: '2026-02-26 12:15:30',
-      duration: '9m 43s'
-    },
-    {
-      id: 4,
-      type: 'security',
-      severity: 'critical',
-      timestamp: '2026-02-26 11:30:00',
-      source: 'WAF',
-      message: 'SQL injection attempt blocked',
-      details: 'Blocked 15 SQL injection attempts from IP 45.227.253.84',
-      status: 'resolved',
-      resolvedAt: '2026-02-26 11:30:05',
-      duration: '5s'
-    },
-    {
-      id: 5,
-      type: 'application',
-      severity: 'medium',
-      timestamp: '2026-02-26 10:45:12',
-      source: 'Celery Worker',
-      message: 'Task queue backlog',
-      details: '12,345 pending tasks - worker scaling triggered',
-      status: 'monitoring',
-      resolvedAt: null
-    }
-  ];
-
-  // Rate Limit Stats
-  const rateLimitStats = {
-    total: 1567,
-    blocked: 234,
-    limited: 1245,
-    current: 88,
-    topEndpoints: [
-      { endpoint: '/api/login/', count: 456, blocked: 89 },
-      { endpoint: '/api/auth/', count: 345, blocked: 67 },
-      { endpoint: '/api/data/', count: 234, blocked: 34 },
-      { endpoint: '/api/search/', count: 189, blocked: 23 },
-      { endpoint: '/api/export/', count: 156, blocked: 21 }
-    ],
-    topIPs: [
-      { ip: '203.45.67.89', count: 567, blocked: true },
-      { ip: '185.191.171.45', count: 456, blocked: true },
-      { ip: '45.227.253.84', count: 345, blocked: true },
-      { ip: '103.152.36.78', count: 234, blocked: true },
-      { ip: '156.67.218.154', count: 189, blocked: false }
-    ]
   };
 
-  // Brute Force Stats
-  const bruteForceStats = {
-    total: 892,
-    blocked: 567,
-    monitored: 325,
-    averageAttempts: 12.4,
-    topTargets: [
-      { target: 'admin@system.com', attempts: 234, blocked: true },
-      { target: 'root@system.com', attempts: 156, blocked: true },
-      { target: 'multiple', attempts: 342, blocked: true },
-      { target: 'user@company.com', attempts: 89, blocked: false },
-      { target: 'support@system.com', attempts: 71, blocked: false }
-    ],
-    byCountry: [
-      { country: 'RU', count: 342 },
-      { country: 'CN', count: 234 },
-      { country: 'VN', count: 156 },
-      { country: 'UA', count: 89 },
-      { country: 'NL', count: 71 }
-    ]
+  // Fetch security events
+  const fetchSecurityEvents = async () => {
+    try {
+      const url = `${API_BASE_URL}/system-health/security-events/?ordering=-timestamp`;
+      console.log('Fetching security events from:', url);
+      
+      const response = await fetch(url);
+      const data = await handleResponse(response);
+      
+      setSecurityEvents(data.results || []);
+      return data;
+    } catch (err) {
+      console.error('Error fetching security events:', err);
+      throw err;
+    }
   };
+
+  // Fetch system errors
+  const fetchSystemErrors = async () => {
+    try {
+      const url = `${API_BASE_URL}/system-health/system-errors/?ordering=-timestamp`;
+      console.log('Fetching system errors from:', url);
+      
+      const response = await fetch(url);
+      const data = await handleResponse(response);
+      
+      setSystemErrors(data.results || []);
+      return data;
+    } catch (err) {
+      console.error('Error fetching system errors:', err);
+      throw err;
+    }
+  };
+
+  // Fetch security statistics
+  const fetchSecurityStats = async () => {
+    try {
+      const url = `${API_BASE_URL}/system-health/security-events/stats/?range=${timeRange}`;
+      console.log('Fetching security stats from:', url);
+      
+      const response = await fetch(url);
+      const data = await handleResponse(response);
+      
+      setRateLimitStats(data.rate_limit || {
+        total: 0, blocked: 0, limited: 0, current: 0, topEndpoints: [], topIPs: []
+      });
+      setBruteForceStats(data.brute_force || {
+        total: 0, blocked: 0, monitored: 0, averageAttempts: 0, topTargets: [], byCountry: []
+      });
+      return data;
+    } catch (err) {
+      console.error('Error fetching security stats:', err);
+      throw err;
+    }
+  };
+
+  // Fetch axes attempts
+  const fetchAxesAttempts = async () => {
+    try {
+      const url = `${API_BASE_URL}/system-health/axes-attempts/?ordering=-attempt_time`;
+      console.log('Fetching axes attempts from:', url);
+      
+      const response = await fetch(url);
+      const data = await handleResponse(response);
+      
+      setAxesAttempts(data.results || []);
+      return data;
+    } catch (err) {
+      console.error('Error fetching axes attempts:', err);
+      // Don't throw for optional data
+      return null;
+    }
+  };
+
+  // Fetch audit logs
+  const fetchAuditLogs = async () => {
+    try {
+      const url = `${API_BASE_URL}/system-health/audit-logs/?ordering=-timestamp`;
+      console.log('Fetching audit logs from:', url);
+      
+      const response = await fetch(url);
+      const data = await handleResponse(response);
+      
+      setAuditLogs(data.results || []);
+      return data;
+    } catch (err) {
+      console.error('Error fetching audit logs:', err);
+      // Don't throw for optional data
+      return null;
+    }
+  };
+
+  // Fetch honeypot logs
+  const fetchHoneypotLogs = async () => {
+    try {
+      const url = `${API_BASE_URL}/system-health/honeypot-logs/?ordering=-timestamp`;
+      console.log('Fetching honeypot logs from:', url);
+      
+      const response = await fetch(url);
+      const data = await handleResponse(response);
+      
+      setHoneypotLogs(data.results || []);
+      return data;
+    } catch (err) {
+      console.error('Error fetching honeypot logs:', err);
+      // Don't throw for optional data
+      return null;
+    }
+  };
+
+  // Fetch real-time stats
+  const fetchRealtimeStats = async () => {
+    try {
+      const url = `${API_BASE_URL}/system-health/realtime/`;
+      console.log('Fetching realtime stats from:', url);
+      
+      const response = await fetch(url);
+      const data = await handleResponse(response);
+      
+      // Update events and errors with real-time data
+      if (data.events && data.events.length > 0) {
+        setSecurityEvents(prev => [...data.events, ...prev].slice(0, 50));
+      }
+      if (data.errors && data.errors.length > 0) {
+        setSystemErrors(prev => [...data.errors, ...prev].slice(0, 30));
+      }
+      return data;
+    } catch (err) {
+      console.error('Error fetching realtime stats:', err);
+      return null;
+    }
+  };
+
+  // Block IP
+  const blockIP = async (eventId) => {
+    try {
+      const url = `${API_BASE_URL}/system-health/security-events/${eventId}/block_ip/`;
+      console.log('Blocking IP at:', url);
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      await handleResponse(response);
+      
+      setSuccess('IP blocked successfully');
+      setTimeout(() => setSuccess(null), 3000);
+      
+      // Refresh data
+      fetchSecurityEvents();
+      fetchSecurityStats();
+    } catch (err) {
+      setError('Failed to block IP: ' + err.message);
+    }
+  };
+
+  // Clear blocked attempts
+  const clearBlockedAttempts = async () => {
+    try {
+      const url = `${API_BASE_URL}/system-health/axes-attempts/clear_blocked/`;
+      console.log('Clearing blocked attempts at:', url);
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      await handleResponse(response);
+      
+      setSuccess('Blocked attempts cleared');
+      setTimeout(() => setSuccess(null), 3000);
+      
+      // Refresh data
+      fetchAxesAttempts();
+    } catch (err) {
+      setError('Failed to clear blocked attempts: ' + err.message);
+    }
+  };
+
+  // Fetch all data with better error handling
+  const fetchAllData = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Test if API is reachable first
+      const testUrl = `${API_BASE_URL}/system-health/`;
+      console.log('Testing API connection at:', testUrl);
+      
+      const testResponse = await fetch(testUrl);
+      if (!testResponse.ok) {
+        throw new Error(`API not reachable. Status: ${testResponse.status}`);
+      }
+      
+      console.log('✅ API connection successful');
+      
+      // Fetch all data in parallel
+      const results = await Promise.allSettled([
+        fetchDashboardData(),
+        fetchSecurityEvents(),
+        fetchSystemErrors(),
+        fetchSecurityStats(),
+        fetchAxesAttempts(),
+        fetchAuditLogs(),
+        fetchHoneypotLogs()
+      ]);
+      
+      const failed = results.filter(r => r.status === 'rejected');
+      if (failed.length > 0) {
+        console.warn(`${failed.length} fetches failed:`, failed);
+        if (failed.length === results.length) {
+          setError('Failed to fetch any data. Check console for details.');
+        } else {
+          setSuccess('Some data loaded successfully');
+          setTimeout(() => setSuccess(null), 3000);
+        }
+      } else {
+        setSuccess('System health data refreshed');
+        setTimeout(() => setSuccess(null), 3000);
+      }
+    } catch (err) {
+      console.error('❌ API connection failed:', err);
+      setError(`Cannot connect to API at ${API_BASE_URL}. Make sure Django server is running on port 8000.`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Test API connection on mount
+  useEffect(() => {
+    fetchAllData();
+  }, [timeRange]);
 
   // Auto-refresh effect
   useEffect(() => {
     let interval;
     if (autoRefresh) {
       interval = setInterval(() => {
-        refreshData();
+        fetchRealtimeStats();
       }, 30000); // Refresh every 30 seconds
     }
     return () => clearInterval(interval);
   }, [autoRefresh]);
 
   const refreshData = () => {
-    setLoading(true);
-    // Simulate data refresh
-    setTimeout(() => {
-      setLoading(false);
-      setSuccess('System health data refreshed');
-      setTimeout(() => setSuccess(null), 3000);
-    }, 1500);
+    fetchAllData();
   };
 
   // Get severity color
   const getSeverityColor = (severity) => {
-    switch(severity) {
+    switch(severity?.toLowerCase()) {
       case 'critical': return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
       case 'high': return 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400';
       case 'medium': return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400';
@@ -334,7 +389,7 @@ const SystemHealth = () => {
 
   // Get status color
   const getStatusColor = (status) => {
-    switch(status) {
+    switch(status?.toLowerCase()) {
       case 'healthy': return 'text-green-600 dark:text-green-400';
       case 'warning': return 'text-yellow-600 dark:text-yellow-400';
       case 'critical': return 'text-red-600 dark:text-red-400';
@@ -342,6 +397,8 @@ const SystemHealth = () => {
       case 'limited': return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400';
       case 'monitoring': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
       case 'resolved': return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
+      case 'success': return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
+      case 'failed': return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
       default: return 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400';
     }
   };
@@ -351,6 +408,13 @@ const SystemHealth = () => {
     if (percentage < 60) return 'bg-green-500';
     if (percentage < 80) return 'bg-yellow-500';
     return 'bg-red-500';
+  };
+
+  // Format timestamp
+  const formatTimestamp = (timestamp) => {
+    if (!timestamp) return '';
+    const date = new Date(timestamp);
+    return date.toLocaleString();
   };
 
   return (
@@ -383,6 +447,7 @@ const SystemHealth = () => {
                   ? 'bg-red-50 border-red-300 text-red-600 dark:bg-red-900/20 dark:border-red-700' 
                   : 'border-gray-300 dark:border-gray-600 text-gray-500 hover:text-red-600'
               }`}
+              title={autoRefresh ? 'Auto-refresh on' : 'Auto-refresh off'}
             >
               <FiRefreshCw className={`w-5 h-5 ${autoRefresh ? 'animate-spin' : ''}`} />
             </button>
@@ -442,28 +507,28 @@ const SystemHealth = () => {
                 </div>
                 <div>
                   <p className="text-sm text-gray-500 dark:text-gray-400">CPU Usage</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{systemStats.cpu.usage}%</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{systemStats.cpu?.usage || 0}%</p>
                 </div>
               </div>
-              <span className={`text-sm font-medium ${getStatusColor(systemStats.cpu.status)}`}>
+              <span className={`text-sm font-medium ${getStatusColor(systemStats.cpu?.status)}`}>
                 <FiCheckCircle className="w-4 h-4" />
               </span>
             </div>
             <div className="space-y-2">
               <div className="flex justify-between text-xs">
                 <span className="text-gray-500 dark:text-gray-400">Temperature</span>
-                <span className="text-gray-900 dark:text-white">{systemStats.cpu.temperature}°C</span>
+                <span className="text-gray-900 dark:text-white">{systemStats.cpu?.temperature || 'N/A'}°C</span>
               </div>
               <div className="flex justify-between text-xs">
                 <span className="text-gray-500 dark:text-gray-400">Load Average</span>
                 <span className="text-gray-900 dark:text-white">
-                  {systemStats.cpu.loadAverage.join(' / ')}
+                  {systemStats.cpu?.loadAverage?.join(' / ') || '0 / 0 / 0'}
                 </span>
               </div>
               <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                 <div 
-                  className={`h-2 rounded-full ${getProgressColor(systemStats.cpu.usage)}`}
-                  style={{ width: `${systemStats.cpu.usage}%` }}
+                  className={`h-2 rounded-full ${getProgressColor(systemStats.cpu?.usage || 0)}`}
+                  style={{ width: `${systemStats.cpu?.usage || 0}%` }}
                 ></div>
               </div>
             </div>
@@ -478,26 +543,28 @@ const SystemHealth = () => {
                 </div>
                 <div>
                   <p className="text-sm text-gray-500 dark:text-gray-400">Memory</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{systemStats.memory.used} / {systemStats.memory.total} GB</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {systemStats.memory?.used?.toFixed(1) || 0} / {systemStats.memory?.total?.toFixed(1) || 0} GB
+                  </p>
                 </div>
               </div>
-              <span className={`text-sm font-medium ${getStatusColor(systemStats.memory.status)}`}>
+              <span className={`text-sm font-medium ${getStatusColor(systemStats.memory?.status)}`}>
                 <FiCheckCircle className="w-4 h-4" />
               </span>
             </div>
             <div className="space-y-2">
               <div className="flex justify-between text-xs">
                 <span className="text-gray-500 dark:text-gray-400">Free</span>
-                <span className="text-gray-900 dark:text-white">{systemStats.memory.free} GB</span>
+                <span className="text-gray-900 dark:text-white">{systemStats.memory?.free?.toFixed(1) || 0} GB</span>
               </div>
               <div className="flex justify-between text-xs">
                 <span className="text-gray-500 dark:text-gray-400">Usage</span>
-                <span className="text-gray-900 dark:text-white">{systemStats.memory.percentage}%</span>
+                <span className="text-gray-900 dark:text-white">{systemStats.memory?.percentage?.toFixed(1) || 0}%</span>
               </div>
               <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                 <div 
-                  className={`h-2 rounded-full ${getProgressColor(systemStats.memory.percentage)}`}
-                  style={{ width: `${systemStats.memory.percentage}%` }}
+                  className={`h-2 rounded-full ${getProgressColor(systemStats.memory?.percentage || 0)}`}
+                  style={{ width: `${systemStats.memory?.percentage || 0}%` }}
                 ></div>
               </div>
             </div>
@@ -512,29 +579,31 @@ const SystemHealth = () => {
                 </div>
                 <div>
                   <p className="text-sm text-gray-500 dark:text-gray-400">Disk Usage</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{systemStats.disk.used} / {systemStats.disk.total} GB</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {systemStats.disk?.used?.toFixed(1) || 0} / {systemStats.disk?.total?.toFixed(1) || 0} GB
+                  </p>
                 </div>
               </div>
-              <span className={`text-sm font-medium ${getStatusColor(systemStats.disk.status)}`}>
+              <span className={`text-sm font-medium ${getStatusColor(systemStats.disk?.status)}`}>
                 <FiAlertCircle className="w-4 h-4" />
               </span>
             </div>
             <div className="space-y-2">
               <div className="flex justify-between text-xs">
                 <span className="text-gray-500 dark:text-gray-400">Free Space</span>
-                <span className="text-gray-900 dark:text-white">{systemStats.disk.free} GB</span>
+                <span className="text-gray-900 dark:text-white">{systemStats.disk?.free?.toFixed(1) || 0} GB</span>
               </div>
               <div className="flex justify-between text-xs">
                 <span className="text-gray-500 dark:text-gray-400">Usage</span>
-                <span className="text-gray-900 dark:text-white">{systemStats.disk.percentage}%</span>
+                <span className="text-gray-900 dark:text-white">{systemStats.disk?.percentage?.toFixed(1) || 0}%</span>
               </div>
               <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                 <div 
-                  className={`h-2 rounded-full ${getProgressColor(systemStats.disk.percentage)}`}
-                  style={{ width: `${systemStats.disk.percentage}%` }}
+                  className={`h-2 rounded-full ${getProgressColor(systemStats.disk?.percentage || 0)}`}
+                  style={{ width: `${systemStats.disk?.percentage || 0}%` }}
                 ></div>
               </div>
-              {systemStats.disk.warning && (
+              {systemStats.disk?.warning && (
                 <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-2">
                   ⚠️ {systemStats.disk.warning}
                 </p>
@@ -551,29 +620,29 @@ const SystemHealth = () => {
                 </div>
                 <div>
                   <p className="text-sm text-gray-500 dark:text-gray-400">Network</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{systemStats.network.connections} connections</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{systemStats.network?.connections || 0} connections</p>
                 </div>
               </div>
-              <span className={`text-sm font-medium ${getStatusColor(systemStats.network.status)}`}>
+              <span className={`text-sm font-medium ${getStatusColor(systemStats.network?.status)}`}>
                 <FiCheckCircle className="w-4 h-4" />
               </span>
             </div>
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div>
                 <p className="text-gray-500 dark:text-gray-400">Incoming</p>
-                <p className="font-medium text-gray-900 dark:text-white">{systemStats.network.incoming} Mbps</p>
+                <p className="font-medium text-gray-900 dark:text-white">{systemStats.network?.incoming?.toFixed(1) || 0} Mbps</p>
               </div>
               <div>
                 <p className="text-gray-500 dark:text-gray-400">Outgoing</p>
-                <p className="font-medium text-gray-900 dark:text-white">{systemStats.network.outgoing} Mbps</p>
+                <p className="font-medium text-gray-900 dark:text-white">{systemStats.network?.outgoing?.toFixed(1) || 0} Mbps</p>
               </div>
               <div>
                 <p className="text-gray-500 dark:text-gray-400">Latency</p>
-                <p className="font-medium text-gray-900 dark:text-white">{systemStats.network.latency} ms</p>
+                <p className="font-medium text-gray-900 dark:text-white">{systemStats.network?.latency || 0} ms</p>
               </div>
               <div>
                 <p className="text-gray-500 dark:text-gray-400">Active</p>
-                <p className="font-medium text-gray-900 dark:text-white">{systemStats.network.connections}</p>
+                <p className="font-medium text-gray-900 dark:text-white">{systemStats.network?.connections || 0}</p>
               </div>
             </div>
           </div>
@@ -587,25 +656,25 @@ const SystemHealth = () => {
                 </div>
                 <div>
                   <p className="text-sm text-gray-500 dark:text-gray-400">Database</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{systemStats.database.connections} connections</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{systemStats.database?.connections || 0} connections</p>
                 </div>
               </div>
-              <span className={`text-sm font-medium ${getStatusColor(systemStats.database.status)}`}>
+              <span className={`text-sm font-medium ${getStatusColor(systemStats.database?.status)}`}>
                 <FiCheckCircle className="w-4 h-4" />
               </span>
             </div>
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div>
                 <p className="text-gray-500 dark:text-gray-400">Active Queries</p>
-                <p className="font-medium text-gray-900 dark:text-white">{systemStats.database.activeQueries}</p>
+                <p className="font-medium text-gray-900 dark:text-white">{systemStats.database?.activeQueries || 0}</p>
               </div>
               <div>
                 <p className="text-gray-500 dark:text-gray-400">Slow Queries</p>
-                <p className="font-medium text-gray-900 dark:text-white">{systemStats.database.slowQueries}</p>
+                <p className="font-medium text-gray-900 dark:text-white">{systemStats.database?.slowQueries || 0}</p>
               </div>
               <div>
                 <p className="text-gray-500 dark:text-gray-400">Replication Lag</p>
-                <p className="font-medium text-gray-900 dark:text-white">{systemStats.database.replicationLag}s</p>
+                <p className="font-medium text-gray-900 dark:text-white">{systemStats.database?.replicationLag || 0}s</p>
               </div>
             </div>
           </div>
@@ -630,13 +699,13 @@ const SystemHealth = () => {
               <div>
                 <p className="text-gray-500 dark:text-gray-400">Brute Force</p>
                 <p className="font-medium text-gray-900 dark:text-white">
-                  {securityEvents.filter(e => e.type === 'brute_force').length}
+                  {securityEvents.filter(e => e.event_type === 'brute_force').length}
                 </p>
               </div>
               <div>
                 <p className="text-gray-500 dark:text-gray-400">Rate Limited</p>
                 <p className="font-medium text-gray-900 dark:text-white">
-                  {securityEvents.filter(e => e.type === 'rate_limit').length}
+                  {securityEvents.filter(e => e.event_type === 'rate_limit').length}
                 </p>
               </div>
               <div>
@@ -680,7 +749,7 @@ const SystemHealth = () => {
 
               <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Top Targeted Endpoints</h3>
               <div className="space-y-3 mb-6">
-                {rateLimitStats.topEndpoints.map((endpoint, index) => (
+                {rateLimitStats.topEndpoints?.map((endpoint, index) => (
                   <div key={index} className="flex items-center justify-between">
                     <div className="flex-1">
                       <p className="text-sm text-gray-900 dark:text-white">{endpoint.endpoint}</p>
@@ -699,11 +768,14 @@ const SystemHealth = () => {
                     </div>
                   </div>
                 ))}
+                {rateLimitStats.topEndpoints?.length === 0 && (
+                  <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">No rate limit data available</p>
+                )}
               </div>
 
               <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Top Offending IPs</h3>
               <div className="space-y-2">
-                {rateLimitStats.topIPs.map((ip, index) => (
+                {rateLimitStats.topIPs?.map((ip, index) => (
                   <div key={index} className="flex items-center justify-between text-sm">
                     <div className="flex items-center gap-2">
                       <FiGlobe className="w-3 h-3 text-gray-400" />
@@ -723,6 +795,9 @@ const SystemHealth = () => {
                     </div>
                   </div>
                 ))}
+                {rateLimitStats.topIPs?.length === 0 && (
+                  <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">No IP data available</p>
+                )}
               </div>
             </div>
           </div>
@@ -750,13 +825,13 @@ const SystemHealth = () => {
                 </div>
                 <div className="bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg">
                   <p className="text-xs text-gray-500 dark:text-gray-400">Avg Attempts</p>
-                  <p className="text-xl font-bold text-gray-900 dark:text-white">{bruteForceStats.averageAttempts}</p>
+                  <p className="text-xl font-bold text-gray-900 dark:text-white">{bruteForceStats.averageAttempts?.toFixed(1) || 0}</p>
                 </div>
               </div>
 
               <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Top Targeted Accounts</h3>
               <div className="space-y-3 mb-6">
-                {bruteForceStats.topTargets.map((target, index) => (
+                {bruteForceStats.topTargets?.map((target, index) => (
                   <div key={index} className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-gray-900 dark:text-white">{target.target}</p>
@@ -773,11 +848,14 @@ const SystemHealth = () => {
                     )}
                   </div>
                 ))}
+                {bruteForceStats.topTargets?.length === 0 && (
+                  <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">No brute force data available</p>
+                )}
               </div>
 
               <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">By Country</h3>
               <div className="space-y-2">
-                {bruteForceStats.byCountry.map((country, index) => (
+                {bruteForceStats.byCountry?.map((country, index) => (
                   <div key={index} className="flex items-center justify-between">
                     <span className="text-sm text-gray-900 dark:text-white">{country.country}</span>
                     <div className="flex items-center gap-3">
@@ -791,6 +869,9 @@ const SystemHealth = () => {
                     </div>
                   </div>
                 ))}
+                {bruteForceStats.byCountry?.length === 0 && (
+                  <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">No country data available</p>
+                )}
               </div>
             </div>
           </div>
@@ -834,17 +915,17 @@ const SystemHealth = () => {
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-1">
                         <FiClock className="w-3 h-3 text-gray-400" />
-                        <span className="text-sm text-gray-600 dark:text-gray-400">{event.timestamp}</span>
+                        <span className="text-sm text-gray-600 dark:text-gray-400">{formatTimestamp(event.timestamp)}</span>
                       </div>
                     </td>
                     <td className="py-3 px-4">
                       <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                        event.type === 'brute_force' 
+                        event.event_type === 'brute_force' 
                           ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
                           : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
                       }`}>
-                        {event.type === 'brute_force' ? <FiLock className="w-3 h-3" /> : <FiZap className="w-3 h-3" />}
-                        {event.type === 'brute_force' ? 'Brute Force' : 'Rate Limit'}
+                        {event.event_type === 'brute_force' ? <FiLock className="w-3 h-3" /> : <FiZap className="w-3 h-3" />}
+                        {event.event_type === 'brute_force' ? 'Brute Force' : 'Rate Limit'}
                       </span>
                     </td>
                     <td className="py-3 px-4">
@@ -854,7 +935,7 @@ const SystemHealth = () => {
                     </td>
                     <td className="py-3 px-4">
                       <div>
-                        <p className="text-sm font-mono text-gray-900 dark:text-white">{event.source}</p>
+                        <p className="text-sm font-mono text-gray-900 dark:text-white">{event.source_ip}</p>
                         <p className="text-xs text-gray-500 dark:text-gray-400">{event.country}</p>
                       </div>
                     </td>
@@ -876,12 +957,20 @@ const SystemHealth = () => {
                           setViewModal(true);
                         }}
                         className="p-1 text-red-600 hover:text-red-700"
+                        title="View Details"
                       >
                         <FiEye className="w-4 h-4" />
                       </button>
                     </td>
                   </tr>
                 ))}
+                {securityEvents.length === 0 && (
+                  <tr>
+                    <td colSpan="8" className="py-8 text-center text-gray-500 dark:text-gray-400">
+                      No security events found
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -914,11 +1003,11 @@ const SystemHealth = () => {
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-1">
                         <FiClock className="w-3 h-3 text-gray-400" />
-                        <span className="text-sm text-gray-600 dark:text-gray-400">{error.timestamp}</span>
+                        <span className="text-sm text-gray-600 dark:text-gray-400">{formatTimestamp(error.timestamp)}</span>
                       </div>
                     </td>
                     <td className="py-3 px-4">
-                      <span className="text-sm text-gray-600 dark:text-gray-400">{error.type}</span>
+                      <span className="text-sm text-gray-600 dark:text-gray-400">{error.error_type}</span>
                     </td>
                     <td className="py-3 px-4">
                       <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${getSeverityColor(error.severity)}`}>
@@ -941,10 +1030,65 @@ const SystemHealth = () => {
                     </td>
                   </tr>
                 ))}
+                {systemErrors.length === 0 && (
+                  <tr>
+                    <td colSpan="7" className="py-8 text-center text-gray-500 dark:text-gray-400">
+                      No system errors found
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
         </div>
+
+        {/* Axes Attempts (Optional Section) */}
+        {axesAttempts.length > 0 && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <FiLock className="w-5 h-5 text-red-600" />
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Failed Login Attempts</h2>
+                </div>
+                <button
+                  onClick={clearBlockedAttempts}
+                  className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400"
+                >
+                  Clear Blocked
+                </button>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 dark:bg-gray-700/50">
+                  <tr>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">Username</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">IP Address</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">Attempt Time</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">Failures</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">Path</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {axesAttempts.slice(0, 5).map((attempt) => (
+                    <tr key={attempt.id}>
+                      <td className="py-3 px-4 text-sm text-gray-900 dark:text-white">{attempt.username}</td>
+                      <td className="py-3 px-4 text-sm font-mono text-gray-600 dark:text-gray-400">{attempt.ip_address}</td>
+                      <td className="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">{formatTimestamp(attempt.attempt_time)}</td>
+                      <td className="py-3 px-4">
+                        <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs">
+                          {attempt.failures_since_start}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">{attempt.path_info}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Event Details Modal */}
@@ -967,13 +1111,13 @@ const SystemHealth = () => {
                   <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
                     <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Event Type</p>
                     <div className="flex items-center gap-2">
-                      {selectedEvent.type === 'brute_force' ? (
+                      {selectedEvent.event_type === 'brute_force' ? (
                         <FiLock className="w-4 h-4 text-red-600" />
                       ) : (
                         <FiZap className="w-4 h-4 text-yellow-600" />
                       )}
                       <p className="font-medium text-gray-900 dark:text-white">
-                        {selectedEvent.type === 'brute_force' ? 'Brute Force Attack' : 'Rate Limit Exceeded'}
+                        {selectedEvent.event_type === 'brute_force' ? 'Brute Force Attack' : 'Rate Limit Exceeded'}
                       </p>
                     </div>
                   </div>
@@ -987,13 +1131,13 @@ const SystemHealth = () => {
 
                 <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
                   <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Timestamp</p>
-                  <p className="font-medium text-gray-900 dark:text-white">{selectedEvent.timestamp}</p>
+                  <p className="font-medium text-gray-900 dark:text-white">{formatTimestamp(selectedEvent.timestamp)}</p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
                     <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Source IP</p>
-                    <p className="font-mono font-medium text-gray-900 dark:text-white">{selectedEvent.source}</p>
+                    <p className="font-mono font-medium text-gray-900 dark:text-white">{selectedEvent.source_ip}</p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">{selectedEvent.country} • {selectedEvent.isp}</p>
                   </div>
                   <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
@@ -1005,7 +1149,7 @@ const SystemHealth = () => {
 
                 <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
                   <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">User Agent</p>
-                  <p className="text-sm text-gray-700 dark:text-gray-300 break-all">{selectedEvent.userAgent}</p>
+                  <p className="text-sm text-gray-700 dark:text-gray-300 break-all">{selectedEvent.user_agent}</p>
                 </div>
 
                 <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
@@ -1026,7 +1170,7 @@ const SystemHealth = () => {
                   </div>
                   <div className="bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg">
                     <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Action</p>
-                    <p className="font-medium text-gray-900 dark:text-white">{selectedEvent.action}</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{selectedEvent.action_taken}</p>
                   </div>
                 </div>
               </div>
@@ -1038,7 +1182,11 @@ const SystemHealth = () => {
                 >
                   Close
                 </button>
-                <button className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                <button
+                  onClick={() => blockIP(selectedEvent.id)}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
+                >
+                  <FiLock className="w-4 h-4" />
                   Block IP Permanently
                 </button>
               </div>

@@ -47,6 +47,8 @@ INSTALLED_APPS = [
     'django_filters',
     'drf_yasg',
     'axes',
+    'auditlog',
+    'django_honeyguard',
     
     # Local apps
     'accounts',
@@ -62,12 +64,16 @@ INSTALLED_APPS = [
     'branch',
     'focal',
     'role',
+    'system_health',
+    'database_backup',
    
 ]
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
+
     'axes.middleware.AxesMiddleware',
+    'auditlog.middleware.AuditlogMiddleware',
 
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -208,24 +214,80 @@ AUTHENTICATION_BACKENDS = [
 
 
 
+# AXES_FAILURE_LIMIT = 5
+# AXES_LOCK_OUT_AT_FAILURE = True
+# AXES_COOLOFF_TIME = 0.01  # 0.01 hour lock
+
+# AXES_RESET_ON_SUCCESS = True
+
+# AXES_LOCKOUT_PARAMETERS = ["ip_address", "username"]
+
+
+
+
+# Axes Configuration
+AXES_ENABLED = True
 AXES_FAILURE_LIMIT = 5
-AXES_LOCK_OUT_AT_FAILURE = True
-AXES_COOLOFF_TIME = 0.01  # 0.01 hour lock
+AXES_COOLOFF_TIME = 0.01  # Hour
+AXES_LOCK_OUT_BY_COMBINATION_USER_AND_IP = True
+AXES_USE_USER_AGENT = True
 
-AXES_RESET_ON_SUCCESS = True
+# AuditLog Configuration
+AUDITLOG_INCLUDE_ALL_MODELS = True
 
-AXES_LOCKOUT_PARAMETERS = ["ip_address", "username"]
+# Honeyguard Configuration
+HONEYGUARD = {
+    'ENABLE_ADMIN_HONEYPOT': True,
+    'EMAIL_RECIPIENTS': ['admin@example.com'],
+}
 
 
 
 
 REST_FRAMEWORK = {
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 10,
-
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        #'rest_framework.permissions.IsAuthenticated',
+         'rest_framework.permissions.AllowAny',  # Change to IsAuthenticated in production
+    ],
     'DEFAULT_FILTER_BACKENDS': [
         'django_filters.rest_framework.DjangoFilterBackend',
         'rest_framework.filters.SearchFilter',
         'rest_framework.filters.OrderingFilter',
-    ]
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10
+}
+
+
+
+
+
+import os
+import subprocess
+from django.conf import settings
+from celery.schedules import crontab
+
+# Backup settings
+BACKUP_ROOT = os.path.join(BASE_DIR, 'backups')
+os.makedirs(BACKUP_ROOT, exist_ok=True)
+
+# AWS Settings (if using S3)
+AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID', '')
+AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY', '')
+AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME', '')
+AWS_S3_REGION_NAME = os.environ.get('AWS_S3_REGION_NAME', 'us-east-1')
+
+# Celery settings (optional, for async backups)
+CELERY_BEAT_SCHEDULE = {
+    'update-backup-stats': {
+        'task': 'backup_manager.tasks.update_statistics_task',
+        'schedule': crontab(hour=0, minute=5),  # Daily at 00:05
+    },
+    'cleanup-old-backups': {
+        'task': 'backup_manager.tasks.cleanup_backups_task',
+        'schedule': crontab(hour=2, minute=0),  # Daily at 02:00
+    },
 }

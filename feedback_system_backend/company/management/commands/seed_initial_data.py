@@ -12,13 +12,13 @@ class Command(BaseCommand):
     @transaction.atomic
     def handle(self, *args, **kwargs):
 
-        # 1️⃣ Create Company
+        # Create Company
         company, _ = Company.objects.get_or_create(
             name="Gebeta",
             defaults={"description": "Gebeta PLC at Hawassa Branch"}
         )
 
-        # 2️⃣ Create Branches
+        # Create Branches
         branches = [
             "Alliance Branch",
             "Atote Branch"
@@ -33,7 +33,7 @@ class Command(BaseCommand):
                 }
             )
 
-        # 3️⃣ Create Roles
+        # Create Roles
         roles = [
             {"name": "Call Center", "code": "CALL_CENTER"},
             {"name": "Branch Manager", "code": "BRANCH_MANAGER"},
@@ -50,4 +50,4 @@ class Command(BaseCommand):
                 }
             )
 
-        self.stdout.write(self.style.SUCCESS("✅ Gebeta initial data seeded successfully!"))
+        self.stdout.write(self.style.SUCCESS("Gebeta initial data seeded successfully!"))
